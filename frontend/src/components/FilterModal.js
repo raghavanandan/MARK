@@ -6,8 +6,10 @@ class FilterModal extends Component{
     constructor(props){
         super(props);
         this.state = {
-            filterColumns: [],
+            filterColumns: null,
         }
+
+        this.handleChange = this.handleChange.bind(this);
     }
 
 
@@ -17,7 +19,8 @@ class FilterModal extends Component{
     }
 
     handleChange(option) {
-        console.log(option);
+        // console.log(option);
+        this.setState({filterColumns: option}, () => console.log(this.state));
     }
 
     renderFilterModal() {
@@ -46,10 +49,14 @@ class FilterModal extends Component{
                     <h4>Choose the columns:</h4>
                         <Select
                             className={"filter-select"}
-                            value={null}
+                            value={this.state.filterColumns}
                             onChange={this.handleChange}
                             options={options}
-                            isMulti={true}
+                            isMulti
+                            isSearchable
+                            autoFocus
+                            name={"columns"}
+                            classNamePrefix={"filter-options"}
                         />
                         {/*<select>*/}
                             {/*{this.props.headers.map((value, index) => (*/}

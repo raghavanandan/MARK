@@ -176,6 +176,7 @@ button {
   opacity: 1;
   margin-top: 90px;
   padding-top: 80px;
+  position: absolute;
 }
 
 .modal-header .close {
@@ -189,5 +190,5 @@ button {
 }
 
 .filter-select {
-  width: 20%;
+  width: 40%;
 }

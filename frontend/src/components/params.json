@@ -1,0 +1,48 @@
+{
+  "models": [
+    "Decision Tree",
+    "Logistic Regression",
+    "Naive Bayes",
+    "Random Forest"
+  ],
+  "hyper_params": {
+    "Logistic Regression": [
+      "penalty",
+      "dual",
+      "tol",
+      "C",
+      "fit_intercept",
+      "intercept_scaling",
+      "class_weight",
+      "random_state",
+      "solver",
+      "max_iter",
+      "multi_class",
+      "verbose",
+      "warm_start",
+      "n_jobs"
+    ],
+    "Decision Tree": [
+      "criterion",
+      "splitter",
+      "max_depth",
+      "min_samples_split",
+      "min_samples_leaf",
+      "min_weight_fraction_leaf",
+      "max_features",
+      "random_state",
+      "max_leaf_nodes",
+      "min_impurity_decrease",
+      "min_impurity_split",
+      "class_weight",
+      "presort"
+    ],
+    "Naive Bayes": [
+      "alpha"
+    ],
+    "Random Forest": [
+      "C",
+      "D"
+    ]
+  }
+}

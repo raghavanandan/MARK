@@ -39,14 +39,13 @@ class App extends Component {
             <div>
                 <Navbar/>
                 <div className={"col-xs-12 main-layout fluid-container"}>
-                    <div className={"col-md-1 side-navbar-div"}>
+                    <div className={"col-md-2 side-navbar-div"}>
                         <SideNavbar section={this.handleSectionChange}/>
                     </div>
-                    <div className={"col-md-11 container-div"}>
+                    <div className={"col-md-10 container-div"}>
                         <Route exact path={"/home"} render={(props) => <MainLayout {...props} section={"home"}/>}/>
                         <Route exact path={"/experiments"} render={(props) => <MainLayout {...props} section={"experimentlist"}/>}/>
                             <Route exact path={"/experiments/:expId"} render={(props) => <WorkspaceLayout {...props} />}/>
-                        {/*<Route exact path={"/file-structure"} render={(props) => <MainLayout {...props} />} />*/}
                         <Route exact path={"/datasets"}
                                render={(props) => <MainLayout {...props} section={"datasets"}/>}/>
                     </div>

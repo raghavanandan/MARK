@@ -1,43 +1,5 @@
-/*.App {*/
-  /*text-align: center;*/
-/*}*/
-
-/*.App-logo {*/
-  /*animation: App-logo-spin infinite 20s linear;*/
-  /*height: 40vmin;*/
-  /*pointer-events: none;*/
-/*}*/
-
-/*.App-header {*/
-  /*background-color: #282c34;*/
-  /*min-height: 100vh;*/
-  /*display: flex;*/
-  /*flex-direction: column;*/
-  /*align-items: center;*/
-  /*justify-content: center;*/
-  /*font-size: calc(10px + 2vmin);*/
-  /*color: white;*/
-/*}*/
-
-/*.App-link {*/
-  /*color: #61dafb;*/
-/*}*/
-
-/*@keyframes App-logo-spin {*/
-  /*from {*/
-    /*transform: rotate(0deg);*/
-  /*}*/
-  /*to {*/
-    /*transform: rotate(360deg);*/
-  /*}*/
-/*}*/
-
 * {
   font-family: 'Ubuntu', sans-serif;
-}
-
-a, a:hover {
-  /*text-decoration: none;*/
 }
 
 legend {
@@ -81,26 +43,24 @@ textarea {
 }
 
 .side-navbar {
-  background-color: #111;
-  color: #fff;
+  background-color: #f7f9fa;
+  border-right: 1px solid #eee;
+  color: #637282;
   height: 100vh;
-  /*padding: 15px;*/
   font-size: 16px;
 }
 
 .side-navlinks {
   padding: 15px;
   list-style: none;
-  /*border-bottom: 1px solid #fff;*/
-  transition: 0.6s all;
+  transition: 0.3s all;
   cursor: pointer;
 }
 
 .side-navlinks:hover {
-  background-color: #fee600;
-  transition: 0.6s all;
-  color: #333;
-  font-weight: bold;
+  background-color: #2684ff;
+  transition: 0.3s all;
+  color: #fff;
 }
 
 .exp-links:first-child {
@@ -115,9 +75,8 @@ textarea {
   margin-top: 6px;
 }
 
-.exp-links:hover span {
-  font-weight: bolder;
-  text-decoration: underline;
+.exp-links:hover {
+  color: #0070e0;
 }
 
 .tab-layout {
@@ -148,9 +107,8 @@ textarea {
 }
 
 .active {
-  background-color: #fee600;
-  color: #333;
-  font-weight: bold;
+  background-color: #2684ff;
+  color: #fff;
   transition: 0.6s all;
 }
 
@@ -160,8 +118,11 @@ textarea {
 }
 
 .exp-sidebar {
-  border-left: 1px solid #ddd;
+  border-left: 1px solid #eee;
+  background-color: #f7f9fa;
   height: 100vh;
+  padding-top: 20px;
+  color: #637282;
 }
 
 .no-pad {
@@ -179,13 +140,10 @@ textarea {
 
 .experiment-name {
   cursor: pointer;
-  transition: 0.5s all;
 }
 
 .experiment-name:hover {
-  font-weight: bold;
-  background-color: #ccc;
-  transition: 0.5s all;
+  color: #007af5;
 }
 
 .modal {
@@ -200,6 +158,13 @@ textarea {
   padding-top: 90px;
 }
 
+.modal-header {
+  font-size: 18px;
+  padding: 24px;
+  background-color: #f7f9fa;
+  border-radius: 5px 5px 0 0;
+}
+
 .modal-header .close {
   margin-top: -22px;
 }
@@ -211,7 +176,7 @@ textarea {
 }
 
 .filter-select {
-  width: 40%;
+  width: 100%;
 }
 
 .dataset-table tbody tr:hover {
@@ -241,7 +206,7 @@ textarea {
   border-radius: 4px;
   font-size: 12px;
   display: none;
-  color: #333;
+  color: #1b2733;
 }
 
 .dataset-table tbody tr:hover .table-options {
@@ -249,22 +214,23 @@ textarea {
 }
 
 .table-options:hover {
-  color: #333;
-  border: 1px solid #333;
+  color: #007af5;
+  border-color: #007af5;
 }
 
 .add-new-btn {
-  padding: 6px;
+  padding: 8px 25px;
   margin-top: -8px;
-  border-radius: 2px;
-  background-color: #fff;
-  border-color: #333;
-  transition: 0.8s all;
+  border-radius: 4px;
+  background-color: #0070e0;
+  color: #fff;
+  border: none;
+  font-size: 14px;
+  font-weight: bold;
 }
 
 .add-new-btn:hover {
-  background-color: #fee600;
-  transition: 0.8s all;
+  background-color: #007af5;
 }
 
 .add-new:hover {
@@ -278,4 +244,78 @@ textarea {
 
 .required {
   color: #b71c1c;
+}
+
+.action-btn, .cancel-btn {
+  min-width: 128px;
+  height: 32px;
+  font-weight: 700;
+  min-height: 32px;
+  padding: 0 16px;
+  border-radius: 4px;
+  border: none;
+}
+
+.action-btn {
+  background-color: #0070e0;
+  color: #fff;
+}
+
+.cancel-btn {
+  background: #fff;
+  border: 1px solid #bbb;
+  color: #47525d;
+  margin-right: 20px;
+}
+
+.cancel-btn:hover {
+  background: linear-gradient(#fffffe, #f2f2f2);
+}
+
+.action-btn:hover {
+  background: linear-gradient(#168eef, #007ee5);
+}
+
+.btn-group {
+  border-top: 1px solid #eee;
+  width: 100%;
+  padding: 20px 15px;
+  background-color: #f7f9fa;
+  border-radius: 0 0 5px 5px;
+}
+
+.custom-modal {
+  padding: 0;
+}
+
+.form-pad:first-child {
+  padding-top: 15px;
+}
+
+.form-group {
+  padding-left: 15px;
+  padding-right : 15px;
+}
+
+.filter-option-div {
+  border-right: 1px solid #ccc;
+  min-height: 250px;
+  padding: 0;
+  color: #637282;
+}
+
+.filter-option-div div {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  cursor: pointer;
+}
+
+.filter-option-div div:hover {
+  opacity: 0.8;
+}
+
+.active-link, .active-link:hover {
+  color: #0070e0 !important;
+  font-weight: 700;
+  opacity: 1 !important;
 }

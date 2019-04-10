@@ -26,7 +26,7 @@ class DatasetTable extends Component {
         let docId = this.props.expId;
         if (docId !== "null") {
             API.getFile(docId).then((data) => {
-                if (data !== null || data !== undefined) {
+                if (data !== null && data !== undefined) {
                     this.setState({
                         file: data.docs,
                         headers: data.header
@@ -82,16 +82,13 @@ class DatasetTable extends Component {
         }
 
         return (
-            <div className={'col-md-9 tab-layout'}>
-                {/*{this.state.file.length ?*/}
-                    {/*<div className={"col-md-12"}>*/}
-                        {/*<button*/}
-                            {/*className={"btn btn-md show-filters pull-right"}*/}
-                            {/*onClick={this.toggleFilterOptions}>*/}
-                            {/*{this.state.filter ? 'Hide' : 'Show'} filter options*/}
-                        {/*</button>*/}
-                    {/*</div> : null*/}
-                {/*}*/}
+            <div className={'col-md-10 top-pad fluid-container'}>
+                <div className={"col-md-12"}>
+                    <div className={"header-add-new"}>
+                        <span className={"legend-heading"}>Experiment - 1</span>
+                    </div>
+                    <hr className={"legend-separator"} />
+                </div>
                 {this.state.file.length ?
                     <div className={"file-table " + (this.state.filter ? "col-md-7" : "col-md-12")  + " table-responsive"}>
                         <table className={'table table-striped'}>

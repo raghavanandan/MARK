@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Button, Modal, Form} from 'react-bootstrap';
+import {Modal, Form} from 'react-bootstrap';
 
 class UploadDatasetModal extends Component {
     constructor(props) {
@@ -56,8 +56,8 @@ class UploadDatasetModal extends Component {
                         Upload a new dataset
                     </Modal.Title>
                 </Modal.Header>
-                <Modal.Body>
-                    <Form onSubmit={(e) => this.handleSubmit(e)}>
+                <Modal.Body className={"no-pad"}>
+                    <Form className={"form-pad"} onSubmit={(e) => this.handleSubmit(e)}>
                         <Form.Group controlId={"formBasicFile"}>
                             <Form.Label>Select the dataset to upload: <span className={"required"}>*</span></Form.Label>
                             <Form.Control type={"file"} required/>
@@ -71,11 +71,12 @@ class UploadDatasetModal extends Component {
                             <Form.Control as={"textarea"} rows={"5"} columns={"20"} maxLength={"256"}
                                           placeholder={"Maximum 256 characters"}/>
                         </Form.Group>
-                        <Button type={"submit"}>Submit</Button>
+                        <div className={"btn-group"}>
+                            <button className={"action-btn pull-right"} type={"submit"}>Submit</button>
+                            <button className={'cancel-btn pull-right'} onClick={this.props.onHide}>Cancel</button>
+                        </div>
                     </Form>
                 </Modal.Body>
-                <Modal.Footer>
-                </Modal.Footer>
             </Modal>
         )
     }

@@ -11,6 +11,7 @@ class DataSetList extends Component{
 
         this.handleFileUpload = this.handleFileUpload.bind(this);
         this.toggleUpload = this.toggleUpload.bind(this);
+        this.createDataframe = this.createDataframe.bind(this);
     }
 
     handleFileUpload(fileData){
@@ -25,6 +26,20 @@ class DataSetList extends Component{
         this.setState({
             addNew: !this.state.addNew
         });
+    }
+
+    createDataframe() {
+        let docId = localStorage.getItem('docId');
+        if (docId !== "null" && docId !== "undefined") {
+            API.createDF(docId).then((data) => {
+                if (data !== null && data !== undefined && data !== 400) {
+                    console.log('Success');
+                    console.log(data);
+                }
+            }).catch((err) => {
+                console.log(err);
+            })
+        }
     }
 
     render() {
@@ -48,7 +63,7 @@ class DataSetList extends Component{
                 </div>
 
                 {/*Table*/}
-                <div className={"col-md-8 table-div"}>
+                <div className={"col-md-10 table-div"}>
                     <table className={"table dataset-table"}>
                         <thead>
                             <tr>
@@ -63,17 +78,7 @@ class DataSetList extends Component{
                                 <td>Apr 05, 2019</td>
                                 <td>
                                     <span>Apr 06, 2019</span>
-                                    <span className={"pull-right table-options"}>
-                                        Create master dataframe
-                                    </span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td className={"dataset-name"}>iris.csv</td>
-                                <td>Apr 05, 2019</td>
-                                <td>
-                                    <span>Apr 06, 2019</span>
-                                    <span className={"pull-right table-options"}>
+                                    <span className={"pull-right table-options"} onClick={this.createDataframe}>
                                         Create master dataframe
                                     </span>
                                 </td>

@@ -26,7 +26,7 @@ class ExperimentNavbar extends Component{
         let hideFilterModal = () => this.setState({showFilterModal: false});
 
         return(
-            <div className={"col-md-3 no-pad exp-sidebar"}>
+            <div className={"col-md-2 exp-sidebar"}>
                 {/*<li className={"exp-links"}>*/}
                     {/*<i className={"fas fa-database"} />&nbsp;&nbsp;Saved Datasets*/}
                 {/*</li>*/}

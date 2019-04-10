@@ -5,7 +5,7 @@ class SideNavbar extends Component{
         super(props);
         this.state = {
             section: ''
-        }
+        };
 
         this.handleSectionChange = this.handleSectionChange.bind(this);
     }

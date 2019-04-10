@@ -24,7 +24,15 @@ class ExperimentList extends Component {
         return(
             <div className={"col-md-12 top-pad fluid-container"}>
                 <div className={"col-md-12"}>
-                    <h2 className={"legend-heading"}>Experiments</h2>
+                    <div className={"header-add-new"}>
+                        <span className={"legend-heading"}>Experiments</span>
+                        {/*<span className={"add-new pull-right"} onClick={() => this.toggleUpload()}>*/}
+                            {/*<button className={"add-new-btn"}>*/}
+                            {/*<i className={"fas fa-plus"} />*/}
+                                {/*&nbsp; Add new*/}
+                            {/*</button>*/}
+                        {/*</span>*/}
+                    </div>
                     <hr className={"legend-separator"} />
                 </div>
                 <div className={"col-md-10 table-div"}>

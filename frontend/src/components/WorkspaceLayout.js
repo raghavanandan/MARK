@@ -26,7 +26,6 @@ class WorkspaceLayout extends Component {
         if (this.state.expId) {
             return (
                 <>
-                    <legend className={"col-md-12 top-pad legend-heading"}>Experiment - 1</legend>
                     <DatasetTable expId={this.state.expId} headers={this.loadHeaders}/>
                     {this.state.headers.length ? <ExperimentNavbar headers={this.state.headers}/> : null }
                 </>

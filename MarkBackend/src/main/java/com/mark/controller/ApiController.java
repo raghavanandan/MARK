@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.mark.pojo.Parser;
 import com.mark.pojo.Response;
+import com.mark.pojo.StringParser;
 import com.mark.storage.Mongo;
 import com.mark.utils.FileParser;
 import com.mark.utils.FileUploader;
@@ -48,17 +49,17 @@ public class ApiController {
 
 	@Autowired
 	private Mongo mongo;
-	
+
 	@Autowired
 	QueryParser queryParser;
-	
+
 	@Autowired
 	private SparkSession sparkSession;
-	
+
 	private static Dataset<Row> masterDf;
-	
+
 	private static Dataset<Row> currentDf;
-	
+
 	@RequestMapping("wordcount")
 	public ResponseEntity<List<Count>> words() {
 		return new ResponseEntity<>(wordCount.count(), HttpStatus.OK);
@@ -89,7 +90,7 @@ public class ApiController {
 
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
-	
+
 	@RequestMapping("create-master-df")
 	public ResponseEntity<String> createMasterDataFrame(@RequestParam("docId") String docId) {
 
@@ -112,51 +113,75 @@ public class ApiController {
 		}
 		masterDf = sparkSession.read().json("/tmp/file1.txt");
 		masterDf.show();
-		
+
 		List<Row> x = masterDf.collectAsList();
 		List<String> js = Utils.convertFrameToJson(x);
-		
-		
+
+
 
 		return new ResponseEntity<>(js.toString(), HttpStatus.OK);
 	}
 	
 	
-	@RequestMapping("select-df")
-	public ResponseEntity<String> selectDataFrame(@RequestParam("columns") List<String> columns) {
-
-		JavaSparkContext sc = JavaSparkContext.fromSparkContext(sparkSession.sparkContext());
+	@RequestMapping("create-view")
+	public ResponseEntity<Response> createView(@RequestParam("viewName") String viewName) {
 		
 		if (currentDf ==null) {
 			currentDf = masterDf;
 		}
 		
-		String[] p = columns.toArray(new String[0]);
+		currentDf.createOrReplaceTempView(viewName);
 		
+		Response res = new Response(true, "View created", viewName);
+		
+		return new ResponseEntity<>(res, HttpStatus.OK);
+		
+	}
+
+	
+
+	@RequestMapping("select-df")
+	public ResponseEntity<String> selectDataFrame(@RequestParam("columns") List<String> columns) {
+
+		JavaSparkContext sc = JavaSparkContext.fromSparkContext(sparkSession.sparkContext());
+
+		if (currentDf ==null) {
+			currentDf = masterDf;
+		}
+
+		String[] p = columns.toArray(new String[0]);
+
 		for (String s :p) {
 			System.out.println(s);
 		}
-		
+
 		currentDf.show();
-		
+
 		currentDf = currentDf.selectExpr(p);
-		
-		
+
+
 		List<Row> x = currentDf.collectAsList();
 		List<String> js = Utils.convertFrameToJson(x);
-		
-		
+
+
 		return new ResponseEntity<>(js.toString(), HttpStatus.OK);
 	}
 
 
 	@PostMapping("/filter-column")
-	public ResponseEntity<Response> filterColumn(@RequestBody Parser parser) {
-		
-		
-		queryParser.parseQuery(parser);
-		
-		return new ResponseEntity<>(null, HttpStatus.OK);
+	public ResponseEntity<String> filterColumn(@RequestBody StringParser parser) {
+
+
+		if (currentDf ==null) {
+			currentDf = masterDf;
+		}
+
+		currentDf = sparkSession.sql(parser.getRawQuery());
+		List<Row> x = currentDf.collectAsList();
+		List<String> js = Utils.convertFrameToJson(x);
+
+
+		return new ResponseEntity<>(js.toString(), HttpStatus.OK);
 	}
 
 

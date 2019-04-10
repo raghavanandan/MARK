@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import HomePage from './HomePage';
-import Datasets from './DataSets';
+import DatasetList from './DataSetList';
 import ExperimentList from './ExperimentList';
 
 class MainLayout extends Component{
@@ -19,9 +19,11 @@ class MainLayout extends Component{
     }
 
     loadExperiment(expId) {
-        this.props.history.push({
-            pathname: `/experiments/${expId}`,
-        })
+        if (expId !== "undefined") {
+            this.props.history.push({
+                pathname: `/experiments/${expId}`,
+            })
+        }
     }
 
     render() {
@@ -30,16 +32,16 @@ class MainLayout extends Component{
         if (this.state.section === 'home') {
             page = <HomePage />
         } else if (this.state.section === 'datasets') {
-            page = <Datasets />
+            page = <DatasetList />
         } else if (this.state.section === 'experimentlist') {
             page = <ExperimentList expId={this.loadExperiment} />
         }
 
 
         return(
-            <div>
+            <>
                 {page}
-            </div>
+            </>
         )
     }
 }

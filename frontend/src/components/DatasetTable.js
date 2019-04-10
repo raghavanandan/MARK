@@ -24,14 +24,14 @@ class DatasetTable extends Component {
 
     componentDidMount() {
         let docId = this.props.expId;
-        if (docId != null) {
+        if (docId !== "null") {
             API.getFile(docId).then((data) => {
                 if (data !== null || data !== undefined) {
                     this.setState({
                         file: data.docs,
-                        headers: data.header.header
+                        headers: data.header
                     });
-                    this.props.headers(data.header.header);
+                    this.props.headers(data.header);
                 }
             }).catch((err) => {
                 console.log(err);
@@ -167,7 +167,6 @@ class DatasetTable extends Component {
                             <button className={"btn btn-md show-filters"}>Submit</button>
                         </div>
                     </div> : null}
-
             </div>
         );
     }

@@ -8,7 +8,7 @@ class Experiment extends Component {
         super(props);
         this.state = {
             loadDataset: false
-        }
+        };
 
         this.loadDataset = this.loadDataset.bind(this);
     }
@@ -24,15 +24,9 @@ class Experiment extends Component {
     render() {
         return(
             <div className={"no-pad fluid-container"}>
-                {/*<div className={"col-md-2 no-pad"}>*/}
-                    {/*<ExperimentNavbar loadDataset={this.loadDataset} />*/}
-                {/*</div>*/}
                 <div className={"col-md-12 exp-workspace tab-layout"}>
                     <div className={"exp-name"}>
                         <legend className={"legend-heading"}>Experiments</legend>
-                    </div>
-                    <div className={"workspace"}>
-                        Workspace
                     </div>
                 </div>
             </div>

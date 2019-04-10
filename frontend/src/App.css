@@ -48,6 +48,22 @@ button {
   outline: none !important;
 }
 
+textarea {
+  resize: none;
+}
+
+.legend-separator {
+  margin-top: 10px;
+  border: 0.02rem solid #ccc;
+}
+
+.legend-heading {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  padding-right: 10px;
+}
+
 .top-navbar {
   background-color: #111;
   padding: 15px;
@@ -94,14 +110,14 @@ button {
 .exp-links {
   list-style: none;
   cursor: pointer;
-  transition: 0.3s all;
   padding: 8px 20px;
   font-size: 16px;
   margin-top: 6px;
 }
 
-.exp-links:hover {
+.exp-links:hover span {
   font-weight: bolder;
+  text-decoration: underline;
 }
 
 .tab-layout {
@@ -175,8 +191,13 @@ button {
 .modal {
   opacity: 1;
   margin-top: 90px;
-  padding-top: 80px;
+  padding-top: 90px;
   position: absolute;
+}
+
+.uploadModal {
+  margin-top: 90px;
+  padding-top: 90px;
 }
 
 .modal-header .close {
@@ -184,11 +205,77 @@ button {
 }
 
 .modal-open #root {
-  opacity: 0.5;
-  transition: 0.6s all;
-  background-color: rgba(0,0,0,0.5);
+  opacity: 0.2;
+  transition: 0.4s all;
+  /*background-color: rgba(0,0,0,0.5);*/
 }
 
 .filter-select {
   width: 40%;
+}
+
+.dataset-table tbody tr:hover {
+  cursor: pointer;
+}
+
+.dataset-table tbody tr {
+  height: 55px;
+  vertical-align: center !important;
+}
+
+.dataset-table tbody td {
+  font-size: 14px;
+}
+
+.dataset-table thead th:first-child {
+  min-width: 400px;
+}
+
+.dataset-table thead th:last-child {
+  min-width: 300px;
+}
+
+.table-options {
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  display: none;
+  color: #333;
+}
+
+.dataset-table tbody tr:hover .table-options {
+  display:block;
+}
+
+.table-options:hover {
+  color: #333;
+  border: 1px solid #333;
+}
+
+.add-new-btn {
+  padding: 6px;
+  margin-top: -8px;
+  border-radius: 2px;
+  background-color: #fff;
+  border-color: #333;
+  transition: 0.8s all;
+}
+
+.add-new-btn:hover {
+  background-color: #fee600;
+  transition: 0.8s all;
+}
+
+.add-new:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.required {
+  color: #b71c1c;
 }

@@ -1,22 +1,31 @@
 import React, {Component} from 'react';
-import {connect} from 'react-redux'
+// import {connect} from 'react-redux'
 
 class ExperimentList extends Component {
     constructor(props){
         super(props);
+        this.state = {
+            expId: '',
+        };
 
         this.chooseExperiment = this.chooseExperiment.bind(this);
     }
 
-    chooseExperiment(id) {
-        this.props.expId(id);
+    componentDidMount() {
+        let id = localStorage.getItem('docId');
+        this.setState({expId: id});
+    }
+
+    chooseExperiment() {
+        this.props.expId(this.state.expId);
     }
 
     render() {
         return(
             <div className={"col-md-12 top-pad fluid-container"}>
                 <div className={"col-md-12"}>
-                    <legend className={"legend-heading"}>Experiments</legend>
+                    <h2 className={"legend-heading"}>Experiments</h2>
+                    <hr className={"legend-separator"} />
                 </div>
                 <div className={"col-md-10 table-div"}>
                     <table className={"table experiment-table"}>
@@ -29,7 +38,7 @@ class ExperimentList extends Component {
                         </thead>
                         <tbody>
                             <tr>
-                                <td className={"experiment-name"} onClick={() => this.chooseExperiment('5ca45b12db954a0d80e89ddb')}>Evaluating biostat file</td>
+                                <td className={"experiment-name"} onClick={() => this.chooseExperiment()}>Evaluating biostat file</td>
                                 <td>Apr 05, 2019</td>
                                 <td>Apr 06, 2019</td>
                             </tr>

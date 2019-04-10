@@ -27,11 +27,12 @@ class ExperimentNavbar extends Component{
 
         return(
             <div className={"col-md-3 no-pad exp-sidebar"}>
-                <li className={"exp-links"}>
-                    <i className={"fas fa-database"} />&nbsp;&nbsp;Saved Datasets
-                </li>
+                {/*<li className={"exp-links"}>*/}
+                    {/*<i className={"fas fa-database"} />&nbsp;&nbsp;Saved Datasets*/}
+                {/*</li>*/}
                 <li className={"exp-links"} onClick={() => this.toggleFilterModal()}>
-                    <i className={"fas fa-exchange-alt"} />&nbsp;&nbsp;Apply filters
+                    <i className={"fas fa-exchange-alt"} />&nbsp;&nbsp;
+                    <span>Apply filters</span>
                 </li>
                 <FilterModal
                     show={this.state.showFilterModal}

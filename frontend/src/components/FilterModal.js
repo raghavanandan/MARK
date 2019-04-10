@@ -7,7 +7,7 @@ class FilterModal extends Component{
         super(props);
         this.state = {
             filterColumns: null,
-        }
+        };
 
         this.handleChange = this.handleChange.bind(this);
     }
@@ -58,11 +58,6 @@ class FilterModal extends Component{
                             name={"columns"}
                             classNamePrefix={"filter-options"}
                         />
-                        {/*<select>*/}
-                            {/*{this.props.headers.map((value, index) => (*/}
-                                {/*<option key={index}>{value}</option>*/}
-                            {/*))}*/}
-                        {/*</select>*/}
                 </Modal.Body>
                 <Modal.Footer>
                     <Button onClick={this.props.onHide}>Close</Button>

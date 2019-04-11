@@ -108,6 +108,27 @@ public class ApiController {
 		return new ResponseEntity<>(js, HttpStatus.OK);
 	}
 	
+	@RequestMapping("current-frame")
+	public ResponseEntity<JSONObject> currentFrame() {
+		
+		if (currentDf ==null) {
+			currentDf = masterDf;
+		}
+
+		
+		List<Row> x = currentDf.collectAsList();
+		JSONObject js = Utils.convertFrameToJson2(x);
+		//		System.out.println(js);
+
+		Tuple2<String, String>[] dtypes = currentDf.dtypes();
+
+		JSONArray header = Utils.getTypes(dtypes);
+
+		js.put("header", header);
+
+		return new ResponseEntity<>(js, HttpStatus.OK);
+	}
+	
 
 	@RequestMapping("create-master-df")
 	public ResponseEntity<JSONObject> createMasterDataFrame(@RequestParam("docId") String docId) {

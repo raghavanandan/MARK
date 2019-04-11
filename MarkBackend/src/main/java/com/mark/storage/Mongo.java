@@ -1,6 +1,7 @@
 package com.mark.storage;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +10,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.BSON;
 import org.bson.types.ObjectId;
+import org.dmg.pmml.Array;
 import org.json.simple.JSONObject;
 import org.mortbay.util.ajax.JSON;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +55,7 @@ public class Mongo {
 		Bson bsonFilter = Filters.eq("_id",oid);
 		FindIterable<Document> meta = metaCol.find(bsonFilter).projection(Projections.excludeId());
 		bsonFilter = Filters.eq("meta_id",docId);
-		FindIterable<Document> uploadData = uploadCol.find(bsonFilter).projection(Projections.excludeId());
+		FindIterable<Document> uploadData = uploadCol.find(bsonFilter).projection(Projections.exclude(Arrays.asList("_id","meta_id")));
 		
 		List<Document> uploadDocs = new ArrayList<>();
 		for(Document doc : uploadData) {

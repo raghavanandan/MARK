@@ -88,9 +88,29 @@ public class ApiController {
 
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
+	
+	
+	@RequestMapping("reset-frame")
+	public ResponseEntity<JSONObject> resetFrame() {
+		
+		currentDf = masterDf;
+		
+		List<Row> x = masterDf.collectAsList();
+		JSONObject js = Utils.convertFrameToJson2(x);
+		//		System.out.println(js);
+
+		Tuple2<String, String>[] dtypes = masterDf.dtypes();
+
+		JSONArray header = Utils.getTypes(dtypes);
+
+		js.put("header", header);
+
+		return new ResponseEntity<>(js, HttpStatus.OK);
+	}
+	
 
 	@RequestMapping("create-master-df")
-	public ResponseEntity<String> createMasterDataFrame(@RequestParam("docId") String docId) {
+	public ResponseEntity<JSONObject> createMasterDataFrame(@RequestParam("docId") String docId) {
 
 		JSONObject result = mongo.getDoc(docId);
 		JavaSparkContext sc = JavaSparkContext.fromSparkContext(sparkSession.sparkContext());
@@ -112,13 +132,18 @@ public class ApiController {
 		masterDf = sparkSession.read().json("/tmp/file1.txt");
 		masterDf.show();
 
+
 		List<Row> x = masterDf.collectAsList();
+		JSONObject js = Utils.convertFrameToJson2(x);
+		//		System.out.println(js);
 
-		List<String> js = Utils.convertFrameToJson(x);
+		Tuple2<String, String>[] dtypes = masterDf.dtypes();
 
+		JSONArray header = Utils.getTypes(dtypes);
 
+		js.put("header", header);
 
-		return new ResponseEntity<>(js.toString(), HttpStatus.OK);
+		return new ResponseEntity<>(js, HttpStatus.OK);
 	}
 
 

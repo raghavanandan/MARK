@@ -8,7 +8,7 @@ export const getFile = (docId) => {
         }).catch((err) => {
             return 400;
         })
-}
+};
 
 export const putFile = (file) => {
     const data = new FormData();
@@ -23,4 +23,25 @@ export const putFile = (file) => {
     }).catch((err) => {
         return 400;
     })
-}
+};
+
+export const createDF = (docId) => {
+  return fetch(`${url}/create-master-df/?docId=${docId}`)
+      .then((res) => res.json())
+      .then((resJSON) => {
+          return resJSON;
+      }).catch((err) => {
+          return 400;
+      })
+};
+
+export const selectDF = (columns) => {
+    // console.log(columns);
+    return fetch(`${url}/select-df/?columns=${columns}`)
+        .then((res) => res.json())
+        .then((resJSON) => {
+            return resJSON;
+        }).catch((err) => {
+            return 400;
+        })
+};

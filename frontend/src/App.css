@@ -70,7 +70,7 @@ textarea {
 .exp-links {
   list-style: none;
   cursor: pointer;
-  padding: 8px 20px;
+  padding: 8px 10px;
   font-size: 16px;
   margin-top: 6px;
 }
@@ -151,6 +151,10 @@ textarea {
   margin-top: 90px;
   padding-top: 90px;
   position: absolute;
+}
+
+.modal-content {
+  z-index: 1000;
 }
 
 .uploadModal {
@@ -318,4 +322,34 @@ textarea {
   color: #0070e0 !important;
   font-weight: 700;
   opacity: 1 !important;
+}
+
+.data-table-div {
+  border-right: 1px solid #ccc;
+  overflow-y: scroll;
+  max-height: 400px;
+}
+
+.data-table th {
+  cursor: pointer;
+  transition: 0.2s all;
+}
+
+.data-table th:hover {
+  background-color: #f1f4fa;
+  transition: 0.2s all;
+}
+
+.visualize-modal .modal-lg {
+  min-width: 85%;
+  padding-top: 20px;
+}
+
+.visualize-content {
+  min-height: 400px;
+  max-height: 400px;
+}
+
+.chartjs-size-monitor canvas {
+  height: 200px !important;
 }

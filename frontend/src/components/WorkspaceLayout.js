@@ -7,11 +7,13 @@ class WorkspaceLayout extends Component {
         super(props);
         this.state = {
             expId: '',
-            headers: []
+            headers: [],
+            filters: {},
         };
 
         this.renderWorkspace = this.renderWorkspace.bind(this);
         this.loadHeaders = this.loadHeaders.bind(this);
+        this.updateFilters = this.updateFilters.bind(this);
     }
 
     componentDidMount() {
@@ -22,21 +24,40 @@ class WorkspaceLayout extends Component {
         this.setState({headers})
     }
 
-    renderWorkspace() {
-        if (this.state.expId) {
-            return (
-                <>
-                    <DatasetTable expId={this.state.expId} headers={this.loadHeaders}/>
-                    {this.state.headers.length ? <ExperimentNavbar headers={this.state.headers}/> : null }
-                </>
-            )
-        } else {
-            return null;
+    updateFilters(filter) {
+        let headers = [];
+        for (let key in filter.header) {
+            headers.push(filter.header[key]['header']);
         }
+        filter['header'] = headers;
+        this.setState({
+            filters: filter
+        });
+    }
+
+    renderWorkspace() {
+        return (
+            <>
+                <DatasetTable filters={this.state.filters} expId={this.state.expId} headers={this.loadHeaders}/>
+                {this.state.headers.length ? <ExperimentNavbar filters={this.updateFilters} headers={this.state.headers}/> : null }
+            </>
+        )
     }
 
     render() {
-        return this.renderWorkspace();
+        if (this.state.filters.header !== undefined && this.state.filters.header.length > 0) {
+            return (
+                <>
+                    <DatasetTable filters={this.state.filters} />
+                    {this.state.headers.length ? <ExperimentNavbar filters={this.updateFilters} headers={this.state.headers}/> : null }
+                </>
+            )
+        } else if (this.state.expId) {
+            return this.renderWorkspace();
+        } else {
+            return null
+        }
+
     }
 }
 

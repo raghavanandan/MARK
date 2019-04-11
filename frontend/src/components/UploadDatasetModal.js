@@ -42,7 +42,6 @@ class UploadDatasetModal extends Component {
     }
 
     render() {
-        const {validated} = this.state;
 
         return (
             <Modal

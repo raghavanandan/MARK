@@ -302,6 +302,38 @@ public class ApiController {
 		return new ResponseEntity<>(js, HttpStatus.OK);
 
 	}
+	
+	@RequestMapping(value="statistics")
+	public ResponseEntity<JSONObject> statistics(@RequestParam("columns") List<String> columns){
+		
+		if (currentDf == null) {
+			currentDf = masterDf;
+		}
+		
+		String[] cols = new String[columns.size()];
+		cols = columns.toArray(cols);
+		
+		Dataset<Row> col1 = currentDf.describe().select(currentDf.col(columns.get(0)));
+		
+		if (columns.size()>1) {
+			col1 = currentDf.describe().select(currentDf.col(columns.get(0)),currentDf.col(columns.get(1)));
+		}
+		
+		JSONObject js = Utils.convertFrameToJson2(col1.collectAsList());
+		
+		Tuple2<String, String>[] dtypes = col1.dtypes();
+
+		JSONArray header = Utils.getTypes(dtypes);
+
+		js.put("header", header);
+		return new ResponseEntity<>(js, HttpStatus.OK);
+		
+		
+		
+	}
+	
+	
+	
 
 
 

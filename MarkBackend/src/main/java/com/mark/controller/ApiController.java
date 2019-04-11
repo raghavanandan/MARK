@@ -88,13 +88,13 @@ public class ApiController {
 
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
-	
-	
+
+
 	@RequestMapping("reset-frame")
 	public ResponseEntity<JSONObject> resetFrame() {
-		
+
 		currentDf = masterDf;
-		
+
 		List<Row> x = masterDf.collectAsList();
 		JSONObject js = Utils.convertFrameToJson2(x);
 		//		System.out.println(js);
@@ -107,20 +107,39 @@ public class ApiController {
 
 		return new ResponseEntity<>(js, HttpStatus.OK);
 	}
-	
-	@RequestMapping("current-frame")
-	public ResponseEntity<JSONObject> currentFrame() {
-		
+
+	@RequestMapping("get-frame")
+	public ResponseEntity<JSONObject> currentFrame(@RequestParam("frame") String frame) {
+
 		if (currentDf ==null) {
 			currentDf = masterDf;
 		}
 
 		
-		List<Row> x = currentDf.collectAsList();
+		Dataset<Row> frameDf = null;
+		
+		switch (frame) {
+		case "master":
+			frameDf = masterDf;
+
+			break;
+		
+		case "current":
+			frameDf = currentDf;
+
+			break;
+
+		default:
+			frameDf = masterDf;
+			break;
+		}
+
+
+		List<Row> x = frameDf.collectAsList();
 		JSONObject js = Utils.convertFrameToJson2(x);
 		//		System.out.println(js);
 
-		Tuple2<String, String>[] dtypes = currentDf.dtypes();
+		Tuple2<String, String>[] dtypes = frameDf.dtypes();
 
 		JSONArray header = Utils.getTypes(dtypes);
 
@@ -128,7 +147,7 @@ public class ApiController {
 
 		return new ResponseEntity<>(js, HttpStatus.OK);
 	}
-	
+
 
 	@RequestMapping("create-master-df")
 	public ResponseEntity<JSONObject> createMasterDataFrame(@RequestParam("docId") String docId) {
@@ -244,7 +263,7 @@ public class ApiController {
 
 	@RequestMapping(value="visualizations")
 	public ResponseEntity<JSONObject> visualizations(@RequestParam String column, @RequestParam String column_type){
-	
+
 
 
 		if (currentDf ==null) {
@@ -262,12 +281,12 @@ public class ApiController {
 		return new ResponseEntity<>(js, HttpStatus.OK);
 
 	}
-	
-	
+
+
 	@RequestMapping(value="visualizations-multiple")
 	public ResponseEntity<JSONObject> visualizationsMultiple(@RequestParam("columns") List<String> columns){
 
-		
+
 		if (currentDf == null) {
 			currentDf = masterDf;
 		}
@@ -283,10 +302,10 @@ public class ApiController {
 		return new ResponseEntity<>(js, HttpStatus.OK);
 
 	}
-	
-	
-	
-	
-	
+
+
+
+
+
 
 }

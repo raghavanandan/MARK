@@ -2,9 +2,12 @@ package com.mark.controller;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.bson.Document;
 import org.json.simple.JSONArray;
@@ -15,26 +18,21 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.mark.pojo.Parser;
 import com.mark.pojo.Response;
 import com.mark.pojo.StringParser;
 import com.mark.storage.Mongo;
 import com.mark.utils.FileParser;
 import com.mark.utils.FileUploader;
 import com.mark.utils.QueryParser;
-import com.mark.utils.Test;
 import com.mark.utils.Utils;
 
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
+import scala.Tuple2;
 
 
 @CrossOrigin(origins="http://localhost:3000")
@@ -115,33 +113,34 @@ public class ApiController {
 		masterDf.show();
 
 		List<Row> x = masterDf.collectAsList();
+
 		List<String> js = Utils.convertFrameToJson(x);
 
 
 
 		return new ResponseEntity<>(js.toString(), HttpStatus.OK);
 	}
-	
-	
+
+
 	@RequestMapping("create-view")
 	public ResponseEntity<Response> createView(@RequestParam("viewName") String viewName) {
-		
+
 		if (currentDf ==null) {
 			currentDf = masterDf;
 		}
-		
+
 		currentDf.createOrReplaceTempView(viewName);
-		
+
 		Response res = new Response(true, "View created", viewName);
-		
+
 		return new ResponseEntity<>(res, HttpStatus.OK);
-		
+
 	}
 
-	
+
 
 	@RequestMapping("select-df")
-	public ResponseEntity<String> selectDataFrame(@RequestParam("columns") List<String> columns) {
+	public ResponseEntity<JSONObject> selectDataFrame(@RequestParam("columns") List<String> columns) {
 
 		JavaSparkContext sc = JavaSparkContext.fromSparkContext(sparkSession.sparkContext());
 
@@ -161,15 +160,21 @@ public class ApiController {
 
 
 		List<Row> x = currentDf.collectAsList();
-		List<String> js = Utils.convertFrameToJson(x);
+		JSONObject js = Utils.convertFrameToJson2(x);
 
 
-		return new ResponseEntity<>(js.toString(), HttpStatus.OK);
+		Tuple2<String, String>[] dtypes = currentDf.dtypes();
+
+		JSONArray header = Utils.getTypes(dtypes);
+
+		js.put("header", header);
+
+		return new ResponseEntity<>(js, HttpStatus.OK);
 	}
 
 
-	@PostMapping("/filter-column")
-	public ResponseEntity<String> filterColumn(@RequestBody StringParser parser) {
+	@RequestMapping(value = "filter-column", method = RequestMethod.POST )
+	public ResponseEntity<JSONObject> filterColumn(@RequestBody StringParser parser) {
 
 
 		if (currentDf ==null) {
@@ -178,14 +183,64 @@ public class ApiController {
 
 		currentDf = sparkSession.sql(parser.getRawQuery());
 		List<Row> x = currentDf.collectAsList();
-		List<String> js = Utils.convertFrameToJson(x);
+		JSONObject js = Utils.convertFrameToJson2(x);
+		//		System.out.println(js);
 
+		Tuple2<String, String>[] dtypes = currentDf.dtypes();
 
-		return new ResponseEntity<>(js.toString(), HttpStatus.OK);
+		JSONArray header = Utils.getTypes(dtypes);
+
+		js.put("header", header);
+
+		return new ResponseEntity<>(js, HttpStatus.OK);
 	}
 
 
+	@RequestMapping(value="visualizations")
+	public ResponseEntity<JSONObject> visualizations(@RequestParam String column, @RequestParam String column_type){
+	
 
 
+		if (currentDf ==null) {
+			currentDf = masterDf;
+		}
+
+		Dataset<Row> groupFrame = currentDf.groupBy(currentDf.col(column)).count();
+		JSONObject js = Utils.convertFrameToJson2(groupFrame.collectAsList());
+
+		Tuple2<String, String>[] dtypes = groupFrame.dtypes();
+
+		JSONArray header = Utils.getTypes(dtypes);
+
+		js.put("header", header);
+		return new ResponseEntity<>(js, HttpStatus.OK);
+
+	}
+	
+	
+	@RequestMapping(value="visualizations-multiple")
+	public ResponseEntity<JSONObject> visualizationsMultiple(@RequestParam("columns") List<String> columns){
+
+		
+		if (currentDf == null) {
+			currentDf = masterDf;
+		}
+
+		Dataset<Row> groupFrame = currentDf.select(currentDf.col(columns.get(0)),currentDf.col(columns.get(1)));
+		JSONObject js = Utils.convertFrameToJson2(groupFrame.collectAsList());
+
+		Tuple2<String, String>[] dtypes = groupFrame.dtypes();
+
+		JSONArray header = Utils.getTypes(dtypes);
+
+		js.put("header", header);
+		return new ResponseEntity<>(js, HttpStatus.OK);
+
+	}
+	
+	
+	
+	
+	
 
 }

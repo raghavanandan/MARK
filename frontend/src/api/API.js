@@ -84,3 +84,13 @@ export const compareColumns = (column1, column2) => {
             return 400;
         })
 };
+
+export const getStats = (column) => {
+    return fetch(`${url}/statistics/?columns=${column}`)
+        .then((res) => res.json())
+        .then((resJSON) => {
+            return resJSON;
+        }).catch(() => {
+            return 400;
+        })
+};

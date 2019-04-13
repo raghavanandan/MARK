@@ -33,7 +33,6 @@ class DataSetList extends Component{
         if (docId !== "null" && docId !== "undefined") {
             API.createDF(docId).then((data) => {
                 if (data !== null && data !== undefined && data !== 400) {
-                    console.log('Success');
                     console.log(data);
                 }
             }).catch((err) => {

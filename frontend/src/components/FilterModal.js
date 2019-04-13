@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
 import {Modal, FormControl} from 'react-bootstrap';
-import Highlight from 'react-highlight';
 import Select from 'react-select';
 import * as API from '../api/API';
 
@@ -39,7 +38,8 @@ class FilterModal extends Component{
             if (filter.length > 0) {
                 API.selectDF(filter).then((data) => {
                     if (data !== undefined && data!= null && data !== 400) {
-                        console.log(data);
+                        this.props.filters(data);
+                        this.props.onHide();
                     }
                 }).catch((err) => {
                     console.log(err);
@@ -54,14 +54,15 @@ class FilterModal extends Component{
         let options = [];
 
         if (this.props.headers.length) {
-            this.props.headers.map((value, index) => {
+            this.props.headers.map((value) => {
                 options.push({value: value, label: value});
             })
         }
 
         return (
             <Modal
-                {...this.props}
+                show={this.props.show}
+                onHide={this.props.onHide}
                 size={"lg"}
                 aria-labelledby="contained-modal-title-vcenter"
             >
@@ -95,8 +96,6 @@ class FilterModal extends Component{
                             />
                         </div>
                     }
-
-
                 </Modal.Body>
                 <div className={"btn-group"}>
                     <button className={"action-btn pull-right"} type={"submit"} onClick={this.submitFilter}>Submit</button>

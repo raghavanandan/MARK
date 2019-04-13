@@ -3,7 +3,7 @@ import * as API from '../api/API';
 import * as PARAMS from './params';
 
 class DatasetTable extends Component {
-    constructor(props){
+    constructor(props) {
         super(props);
         this.state = {
             file: [],
@@ -13,16 +13,27 @@ class DatasetTable extends Component {
             model: '',
             model_params: [],
             hyper_params: [],
-            filter: false
+            reset: false
         };
 
         this.handleInputParams = this.handleInputParams.bind(this);
         this.handleModelParams = this.handleModelParams.bind(this);
         this.handleHyperParams = this.handleHyperParams.bind(this);
-        this.toggleFilterOptions = this.toggleFilterOptions.bind(this);
+        this.resetFrame = this.resetFrame.bind(this);
+    }
+
+    componentWillReceiveProps(nextProps, nextContext) {
+        if (Object.keys(nextProps.filters).length > 0) {
+            this.setState({
+                file: nextProps.filters.docs,
+                headers: nextProps.filters.header,
+                reset: true
+            }, () => console.log(this.state));
+        }
     }
 
     componentDidMount() {
+        // console.log(this.props);
         let docId = this.props.expId;
         if (docId !== "null") {
             API.getFile(docId).then((data) => {
@@ -37,13 +48,11 @@ class DatasetTable extends Component {
                 console.log(err);
             });
         }
-
-
         this.setState({model_params: PARAMS.hyper_params["Decision Tree"]});
     }
 
-    handleInputParams(e){
-        if(!this.state.input_params.includes(e.target.value) && this.state.input_params.length < this.state.headers.length - 1) {
+    handleInputParams(e) {
+        if (!this.state.input_params.includes(e.target.value) && this.state.input_params.length < this.state.headers.length - 1) {
             this.state.input_params.push(e.target.value);
         } else {
             let index = this.state.input_params.indexOf(e.target.value);
@@ -54,11 +63,11 @@ class DatasetTable extends Component {
         console.log(this.state.input_params);
     }
 
-    handleModelParams(e){
+    handleModelParams(e) {
         this.setState({model_params: PARAMS.hyper_params[e.target.value], hyper_params: []});
     }
 
-    handleHyperParams(key, value){
+    handleHyperParams(key, value) {
         let prev = {...this.state.hyper_params};
         if (!value) {
             delete prev[key];
@@ -69,11 +78,14 @@ class DatasetTable extends Component {
         }
     }
 
-    toggleFilterOptions(){
-        this.setState({
-            filter: !this.state.filter
-        });
+    resetFrame() {
+        API.resetDF().then((data) => {
+            console.log(data);
+        }).catch((err) => {
+            console.log(err);
+        })
     }
+
 
     render() {
         let model_params = [];
@@ -82,33 +94,40 @@ class DatasetTable extends Component {
         }
 
         return (
-            <div className={'col-md-10 top-pad fluid-container'}>
+            <div className={'col-md-9 top-pad fluid-container'}>
                 <div className={"col-md-12"}>
                     <div className={"header-add-new"}>
                         <span className={"legend-heading"}>Experiment - 1</span>
                     </div>
-                    <hr className={"legend-separator"} />
+                    <hr className={"legend-separator"}/>
                 </div>
-                {this.state.file.length ?
-                    <div className={"file-table " + (this.state.filter ? "col-md-7" : "col-md-12")  + " table-responsive"}>
+                {this.state.reset ?
+                    <>
+                    <div className={"col-md-12"}>
+                        <button className={"action-btn pull-right"} onClick={() => this.resetFrame()}>Reset Dataframe</button>
+                    </div>
+                    <div>
+                        &nbsp;
+                    </div></> : null
+                }
+                {this.state.file.length > 0 ?
+                    <div className={"file-table " + (this.state.filter ? "col-md-7" : "col-md-12") + " table-responsive"}>
                         <table className={'table table-striped'}>
                             <thead>
-                                <tr>
-                                    {this.state.headers.map((value, index) => (
-                                        <th key={index}>{value}</th>
-                                    ))}
-                                </tr>
+                            <tr>
+                                {this.state.headers.map((value, index) => (
+                                    <th className={"text-center"} key={index}>{value}</th>
+                                ))}
+                            </tr>
                             </thead>
                             <tbody>
-                                {this.state.file.map((value, index) => (
-                                   <tr key={index}>
-                                       <td>{value[this.state.headers[0]]}</td>
-                                       <td>{value[this.state.headers[1]]}</td>
-                                       <td>{value[this.state.headers[2]]}</td>
-                                       <td>{value[this.state.headers[3]]}</td>
-                                       <td>{value[this.state.headers[4]]}</td>
-                                   </tr>
-                                ))}
+                            {this.state.file.map((value, index) => (
+                                <tr className={"text-center"} key={index}>
+                                    {this.state.headers.map((header, index) => (
+                                        <td key={index}>{value[header]}</td>
+                                    ))}
+                                </tr>
+                            ))}
                             </tbody>
                         </table>
                     </div> : <p className={'no-file text-center'}>No file uploaded</p>}
@@ -124,7 +143,8 @@ class DatasetTable extends Component {
                         </div>
                         <div className={"col-md-4 output-params"}>
                             <label>Output column:</label>
-                            <select className={'params-select'} onChange={(e) => this.setState({output_params: e.target.value})}>
+                            <select className={'params-select'}
+                                    onChange={(e) => this.setState({output_params: e.target.value})}>
                                 {this.state.headers.map((value, index) => (
                                     <option key={index}>{value}</option>
                                 ))}
@@ -151,7 +171,7 @@ class DatasetTable extends Component {
                                                 <input
                                                     className={"form-control input-sm"}
                                                     type={"text"}
-                                                    onChange={(e) => this.handleHyperParams(value, e.target.value)} />
+                                                    onChange={(e) => this.handleHyperParams(value, e.target.value)}/>
                                             </td>
                                         </tr>
                                     ))}

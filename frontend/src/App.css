@@ -181,6 +181,7 @@ textarea {
 
 .filter-select {
   width: 100%;
+  height: 50px;
 }
 
 .dataset-table tbody tr:hover {
@@ -343,7 +344,7 @@ textarea {
 
 .visualize-modal .modal-lg {
   min-width: 85%;
-  padding-top: 20px;
+  padding-top: 30px;
 }
 
 .lg-modal-content {

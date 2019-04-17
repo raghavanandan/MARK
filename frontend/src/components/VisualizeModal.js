@@ -4,20 +4,6 @@ import Select from 'react-select';
 import {Chart, ScatterPlot} from './Chart';
 import * as API from '../api/API';
 
-const initialState = {
-    masterData: [],
-    masterHeaders: [],
-    filterData: [],
-    filterHeaders: [],
-    isMaster: true,
-    chartData: '',
-    scatterData: '',
-    chosenColumn: '',
-    optionFilter: null,
-    singleStats: '',
-    multiStats : ''
-};
-
 class VisualizeModal extends Component {
     constructor(props) {
         super(props);

@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React from 'react';
 import {Bar, Scatter} from 'react-chartjs-2';
 
 export const Chart = (props) => {

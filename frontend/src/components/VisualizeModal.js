@@ -139,7 +139,7 @@ class VisualizeModal extends Component {
     render() {
         let options = [];
 
-        if (this.state.masterHeaders.length > 0) {
+        if (this.state.masterHeaders && this.state.masterHeaders.length > 0) {
             this.state.masterHeaders.map((value, index) => {
                 if (!options.includes(value)) {
                     options.push({value: value['header'], label: value['header']});
@@ -147,101 +147,107 @@ class VisualizeModal extends Component {
             });
         }
 
-        return (
-            <Modal
-                show={this.props.show}
-                onHide={this.props.onHide}
-                size={"lg"}
-                className={"visualize-modal"}
-            >
-                <Modal.Header closeButton>
-                    <Modal.Title>
-                        Apply Filters
-                    </Modal.Title>
-                </Modal.Header>
-                <Modal.Body className={"col-md-12 visualize-content"}>
-                    <div className={"col-md-2 filter-option-div"}>
-                        <div className={(this.state.isMaster ? "active-link" : null)}
-                             onClick={() => this.setState({isMaster: true})}>Load Master Dataframe
+        if (this.state.masterHeaders) {
+            return (
+                <Modal
+                    show={this.props.show}
+                    onHide={this.props.onHide}
+                    size={"lg"}
+                    className={"visualize-modal"}
+                >
+                    <Modal.Header closeButton>
+                        <Modal.Title>
+                            Apply Filters
+                        </Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body className={"col-md-12 visualize-content"}>
+                        <div className={"col-md-2 filter-option-div"}>
+                            <div className={(this.state.isMaster ? "active-link" : null)}
+                                 onClick={() => this.setState({isMaster: true})}>Load Master Dataframe
+                            </div>
+                            <div className={(!this.state.isMaster ? "active-link" : null)}
+                                 onClick={() => this.setState({isMaster: false})}>Load Filtered Dataframe
+                            </div>
                         </div>
-                        <div className={(!this.state.isMaster ? "active-link" : null)}
-                             onClick={() => this.setState({isMaster: false})}>Load Filtered Dataframe
-                        </div>
-                    </div>
-                    {this.state.isMaster ?
-                        <div className={"col-md-5 data-table-div"}>
-                            {options.length && this.state.chosenColumn ?
-                                <>
-                                    <div><b>Compare with:</b></div>
-                                    <Select
-                                        className={"compare-select"}
-                                        value={this.state.optionFilter}
-                                        onChange={this.showScatterPlot}
-                                        options={options}
-                                        isSearchable
-                                        autoFocus
-                                        name={"columns"}
-                                        classNamePrefix={"filter-options"}
-                                    /></> : null}
-                            <table className={"table data-table"}>
-                                <thead>
-                                <tr>
-                                    {this.state.masterHeaders.map((value, index) => (
-                                        <th className={"text-center"} key={index}
-                                            onClick={() => this.showBarChart(value['header'], index)}>{value['header']}</th>
-                                    ))}
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {this.state.masterData.map((value, index) => (
-                                    <tr className={"text-center"} key={index}>
-                                        {this.state.masterHeaders.map((header, index) => (
-                                            <td key={index}>{value[header['header']]}</td>
+                        {this.state.isMaster ?
+                            <div className={"col-md-5 data-table-div"}>
+                                {options.length && this.state.chosenColumn ?
+                                    <>
+                                        <div><b>Compare with:</b></div>
+                                        <Select
+                                            className={"compare-select"}
+                                            value={this.state.optionFilter}
+                                            onChange={this.showScatterPlot}
+                                            options={options}
+                                            isSearchable
+                                            autoFocus
+                                            name={"columns"}
+                                            classNamePrefix={"filter-options"}
+                                        /></> : null}
+                                <table className={"table data-table"}>
+                                    <thead>
+                                    <tr>
+                                        {this.state.masterHeaders.map((value, index) => (
+                                            <th className={"text-center"} key={index}
+                                                onClick={() => this.showBarChart(value['header'], index)}>{value['header']}</th>
                                         ))}
                                     </tr>
-                                ))}
-                                </tbody>
-                            </table>
-                        </div> :
-                        <div className={"col-md-3 data-table-div"}>
-                            <table className={"table data-table"}>
-                                <thead>
-                                <tr>
-                                    {this.state.filterHeaders.map((value, index) => (
-                                        <th className={"text-center"} key={index}
-                                            onClick={() => this.showBarChart(value['header'], index)}>{value['header']}</th>
+                                    </thead>
+                                    <tbody>
+                                    {this.state.masterData.map((value, index) => (
+                                        <tr className={"text-center"} key={index}>
+                                            {this.state.masterHeaders.map((header, index) => (
+                                                <td key={index}>{value[header['header']]}</td>
+                                            ))}
+                                        </tr>
                                     ))}
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {this.state.filterData.map((value, index) => (
-                                    <tr className={"text-center"} key={index}>
-                                        {this.state.filterHeaders.map((header, index) => (
-                                            <td key={index}>{value[header['header']]}</td>
+                                    </tbody>
+                                </table>
+                            </div> :
+                            <div className={"col-md-3 data-table-div"}>
+                                <table className={"table data-table"}>
+                                    <thead>
+                                    <tr>
+                                        {this.state.filterHeaders.map((value, index) => (
+                                            <th className={"text-center"} key={index}
+                                                onClick={() => this.showBarChart(value['header'], index)}>{value['header']}</th>
                                         ))}
                                     </tr>
-                                ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                    {this.state.filterData.map((value, index) => (
+                                        <tr className={"text-center"} key={index}>
+                                            {this.state.filterHeaders.map((header, index) => (
+                                                <td key={index}>{value[header['header']]}</td>
+                                            ))}
+                                        </tr>
+                                    ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        <div className={"col-md-5"}>
+                            <h3>Statistics</h3>
+                            <hr/>
+                            <h3>Visualizations</h3>
+                            {this.state.chartData.labels && !this.state.scatterData.labels ?
+                                <Chart chartData={this.state.chartData}/> : null
+                            }
+                            {this.state.scatterData.labels ?
+                                <ScatterPlot chartData={this.state.scatterData} /> : null
+                            }
                         </div>
-                    }
-                    <div className={"col-md-5"}>
-                        <h3>Statistics</h3>
-                        <hr/>
-                        <h3>Visualizations</h3>
-                        {this.state.chartData.labels && !this.state.scatterData.labels ?
-                            <Chart chartData={this.state.chartData}/> : null
-                        }
-                        {this.state.scatterData.labels ?
-                            <ScatterPlot chartData={this.state.scatterData} /> : null
-                        }
-                    </div>
-                </Modal.Body>
-                <div className={"btn-group"}>
+                    </Modal.Body>
+                    <div className={"btn-group"}>
 
-                </div>
-            </Modal>
-        )
+                    </div>
+                </Modal>
+            )
+        } else {
+            return null
+        }
+
+
     }
 }
 

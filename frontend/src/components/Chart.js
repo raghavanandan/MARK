@@ -21,7 +21,7 @@ export const Chart = (props) => {
 };
 
 export const ScatterPlot = (props) => {
-    console.log(props);
+
     return (
         <Scatter
             data={props.chartData}

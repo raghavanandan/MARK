@@ -447,6 +447,12 @@ public class ApiController {
 		
 		res.put("training_set", training_set);
 		res.put("testing_set", testing_set);
+		
+		Tuple2<String, String>[] dtypes = currentDf.dtypes();
+		
+		JSONArray header = Utils.getTypes(dtypes);
+
+		res.put("header", header);
 
 		return new ResponseEntity<>(res, HttpStatus.OK);
 

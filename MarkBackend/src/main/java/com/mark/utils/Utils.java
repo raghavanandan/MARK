@@ -142,6 +142,28 @@ public class Utils {
 	}
 
 
+	public static double[] getDouble(String val) {
+
+		String[] values = val.split(",");
+
+		double[] nums = new double[values.length];
+		for (int i = 0; i < values.length; i++) {
+			nums[i] = Double.parseDouble(values[i]);
+		}
+		return nums;
+	}
+
+	public static int[] getInt(String val) {
+
+		String[] values = val.split(",");
+
+		int[] nums = new int[values.length];
+		for (int i = 0; i < values.length; i++) {
+			nums[i] = Integer.parseInt(values[i]);
+		}
+		return nums;
+	}
+
 
 
 

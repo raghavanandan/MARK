@@ -17,6 +17,10 @@ import org.apache.spark.ml.classification.LogisticRegression;
 import org.apache.spark.ml.classification.LogisticRegressionModel;
 import org.apache.spark.ml.classification.NaiveBayes;
 import org.apache.spark.ml.classification.NaiveBayesModel;
+import org.apache.spark.ml.classification.RandomForestClassificationModel;
+import org.apache.spark.ml.classification.RandomForestClassifier;
+import org.apache.spark.ml.classification.GBTClassificationModel;
+import org.apache.spark.ml.classification.GBTClassifier;
 import org.apache.spark.ml.feature.IndexToString;
 import org.apache.spark.ml.feature.OneHotEncoder;
 import org.apache.spark.ml.feature.StringIndexer;
@@ -505,6 +509,8 @@ public class ApiController {
 		LogisticRegressionModel lrModel = null;
 		DecisionTreeClassificationModel dtModel= null;
 		NaiveBayesModel nbModel= null;
+		RandomForestClassificationModel rfModel = null;
+		GBTClassificationModel gbtModel = null;
 
 		String outputCol = (String) modelJson.get("outputCol");
 
@@ -513,6 +519,26 @@ public class ApiController {
 		JSONObject res = new JSONObject();
 
 		for (Map<String, Object> model :  it) {
+			
+			
+			
+//			if (model.get("model").equals("logistic_regression")){
+//				MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
+//		     	LogisticRegression lr = new LogisticRegression();
+//		     	ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(lr.elasticNetParam(), new double[] {0.0, 0.5, 1.0}).addGrid(lr.regParam(), new double[] {0.01, 0.5, 2.0}).addGrid(lr.maxIter(), new int[] {1, 5, 10});
+//		     	ParamMap[] pMap = paramGrid.build();
+//		     	CrossValidator cv = new CrossValidator().setNumFolds(5).setEstimator(lr).setEstimatorParamMaps(pMap).setEvaluator(mce);
+//		     	CrossValidatorModel cvm = cv.fit(training);
+//		     	System.out.println(cvm.explainParams());
+//		     	System.out.println(cvm.bestModel().explainParams());
+//		     	Dataset<Row> predictions2 = cvm.transform(testing);
+//		     	for(double d : cvm.avgMetrics()) {
+//		     		System.out.println(d);
+//		     	}
+//		     	predictions2.show();
+//		     	System.out.println(mce.evaluate(predictions2));
+//			}
+			
 
 			if (model.get("model").equals("logistic_regression")){
 				lrModel = new LogisticRegression().fit(training);
@@ -628,6 +654,82 @@ public class ApiController {
 
 
 			}
+			
+			if (model.get("model").equals("random_forest")){
+				rfModel = new RandomForestClassifier().fit(training);
+				Dataset<Row> predictions = rfModel.transform(testing);
+				predictions.show();
+
+				Transformer[] _stages = pipelineModel.stages();
+
+				StringIndexerModel temp = (StringIndexerModel)_stages[0];
+
+
+				IndexToString trs = new IndexToString().setLabels(temp.labels()).setInputCol("prediction").setOutputCol("prediction-original");
+				predictions = trs.transform(predictions);
+
+
+				System.out.println("-----<>-----"+model.get("model"));
+				predictions.show();
+
+				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select(outputCol+"Index", "prediction"));
+
+				System.out.println(metrics.accuracy());
+				System.out.println(metrics.fMeasure());
+
+				Dataset<Row> p_orginal = predictions.select("prediction-original");
+				double acc = metrics.accuracy();
+				double fMeasure = metrics.fMeasure();
+
+				JSONObject p_original_json = Utils.convertFrameToJson2Single(p_orginal.collectAsList());
+
+				JSONObject temp_res = new JSONObject();
+				temp_res.put("prediction", p_original_json);
+				temp_res.put("accuracy", acc);
+				temp_res.put("fMeasure", fMeasure);
+
+				res.put(model.get("model"), temp_res);
+			}
+			
+			if (model.get("model").equals("gradient_boosted_trees")){
+				gbtModel = new GBTClassifier().fit(training);
+				Dataset<Row> predictions = gbtModel.transform(testing);
+				predictions.show();
+
+				Transformer[] _stages = pipelineModel.stages();
+
+				StringIndexerModel temp = (StringIndexerModel)_stages[0];
+
+
+				IndexToString trs = new IndexToString().setLabels(temp.labels()).setInputCol("prediction").setOutputCol("prediction-original");
+				predictions = trs.transform(predictions);
+
+
+				System.out.println("-----<>-----"+model.get("model"));
+				predictions.show();
+
+				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select(outputCol+"Index", "prediction"));
+
+				System.out.println(metrics.accuracy());
+				System.out.println(metrics.fMeasure());
+
+				Dataset<Row> p_orginal = predictions.select("prediction-original");
+				double acc = metrics.accuracy();
+				double fMeasure = metrics.fMeasure();
+
+				JSONObject p_original_json = Utils.convertFrameToJson2Single(p_orginal.collectAsList());
+
+				JSONObject temp_res = new JSONObject();
+				temp_res.put("prediction", p_original_json);
+				temp_res.put("accuracy", acc);
+				temp_res.put("fMeasure", fMeasure);
+
+				res.put(model.get("model"), temp_res);
+
+
+
+			}
+
 
 
 

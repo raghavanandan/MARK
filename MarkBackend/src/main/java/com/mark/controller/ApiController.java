@@ -607,7 +607,7 @@ public class ApiController {
 				System.out.println("-----<>-----"+model.get("model"));
 				predictions.show();
 
-				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select(outputCol+"Index", "nb-prediction"));
+				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select(outputCol+"Index", "prediction"));
 
 				System.out.println(metrics.accuracy());
 				System.out.println(metrics.fMeasure());

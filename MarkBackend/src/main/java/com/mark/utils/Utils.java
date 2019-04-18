@@ -81,6 +81,27 @@ public class Utils {
 		return master;
 	}
 	
+public static JSONObject convertFrameToJson2Single(List<Row> rows) {
+		
+		String[] fields = rows.get(0).schema().fieldNames();
+		//List<String> l = new ArrayList<>();
+		
+		JSONObject master = new JSONObject();
+		
+		JSONArray arr = new JSONArray();
+		
+		for (Row r : rows) {
+			
+			arr.add(r.get(0));
+		}
+		
+		master.put("docs", arr);
+		
+		return master;
+	}
+	
+	
+	
 	
 	public static JSONArray getTypes(Tuple2<String, String>[] dtypes) {
 		
@@ -98,6 +119,7 @@ public class Utils {
 		return arr;
 		
 	}
+	
 	
 
 

@@ -4,12 +4,15 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.ml.Pipeline;
 import org.apache.spark.ml.PipelineModel;
 import org.apache.spark.ml.PipelineStage;
 import org.apache.spark.ml.Transformer;
+import org.apache.spark.ml.classification.DecisionTreeClassificationModel;
+import org.apache.spark.ml.classification.DecisionTreeClassifier;
 import org.apache.spark.ml.classification.LogisticRegression;
 import org.apache.spark.ml.classification.LogisticRegressionModel;
 import org.apache.spark.ml.classification.NaiveBayes;
@@ -72,7 +75,7 @@ public class ApiController {
 	private static Dataset<Row> masterDf;
 
 	private static Dataset<Row> currentDf;
-	
+
 	private static PipelineModel pipelineModel;
 
 	private static Dataset<Row> training;
@@ -335,9 +338,9 @@ public class ApiController {
 		cols = columns.toArray(cols);
 
 		Dataset<Row> stats = currentDf.describe();
-		
+
 		Dataset<Row> col1 = stats.select(stats.col("summary"), stats.col(columns.get(0)));
-		
+
 
 		if (columns.size()>1) {
 			col1 = stats.select(stats.col("summary"), stats.col(columns.get(0)),stats.col(columns.get(1)));
@@ -369,7 +372,7 @@ public class ApiController {
 		resetModel();
 
 		StringIndexer tr = new StringIndexer().setInputCol(modelSelection.getOutputCol()).setOutputCol("label");
-		
+
 		ArrayList<PipelineStage> stages = new ArrayList<>();
 
 		stages.add(tr);
@@ -439,13 +442,13 @@ public class ApiController {
 	}
 
 
-	@RequestMapping(value="predict")
-	public ResponseEntity<Response> predict(){
+	@RequestMapping(value="run-predict")
+	public ResponseEntity<Response> runPredict(){
 
 		//LogisticRegressionModel lrModel = new LogisticRegression().fit(training);
-		
+
 		NaiveBayesModel lrModel = new NaiveBayes().fit(training);
-		
+
 		Dataset<Row> predictions = lrModel.transform(testing);
 		predictions.show();
 
@@ -453,28 +456,169 @@ public class ApiController {
 
 		StringIndexerModel temp = (StringIndexerModel)_stages[0];
 
-		
+
 		IndexToString trs = new IndexToString().setLabels(temp.labels()).setInputCol("prediction").setOutputCol("prediction-original");
 		predictions = trs.transform(predictions);
-		
+
 		predictions.show();
 
-		
-//		RDD<Row> temp_rdd = testing.select("sexIndex", "prediction").map(new Function1<Row, Tuple2>(){});
-		
-		
-		
-		
-		
+
+		//		RDD<Row> temp_rdd = testing.select("sexIndex", "prediction").map(new Function1<Row, Tuple2>(){});
+
+
+
+
+
 		MulticlassMetrics metrics = new MulticlassMetrics(predictions.select("SexIndex", "prediction"));
-		
+
 		System.out.println(metrics.accuracy());
 		System.out.println(metrics.fMeasure());
-		
+
 		return null;
-		
-		
+
+
 		//lr, nb, dtree, rforest, gradientbTrees
+	}
+
+	@RequestMapping(value="predict")
+	public ResponseEntity<JSONObject> predict(@RequestBody Map<String, Object> modelJson){
+
+		System.out.println(modelJson);
+
+		LogisticRegressionModel lrModel = null;
+		DecisionTreeClassificationModel dtModel= null;
+		NaiveBayesModel nbModel= null;
+
+		String outputCol = (String) modelJson.get("outputCol");
+
+		List<Map<String, Object>> it = (List<Map<String, Object>>) modelJson.get("data");
+
+		JSONObject res = new JSONObject();
+
+		for (Map<String, Object> model :  it) {
+
+			if (model.get("model").equals("logistic_regression")){
+				lrModel = new LogisticRegression().fit(training);
+				Dataset<Row> predictions = lrModel.transform(testing);
+				predictions.show();
+
+				Transformer[] _stages = pipelineModel.stages();
+
+				StringIndexerModel temp = (StringIndexerModel)_stages[0];
+
+
+				IndexToString trs = new IndexToString().setLabels(temp.labels()).setInputCol("prediction").setOutputCol("prediction-original");
+				predictions = trs.transform(predictions);
+
+
+				System.out.println("-----<>-----"+model.get("model"));
+				predictions.show();
+
+				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select(outputCol+"Index", "prediction"));
+
+				System.out.println(metrics.accuracy());
+				System.out.println(metrics.fMeasure());
+				Dataset<Row> p_orginal = predictions.select("prediction-original");
+				double acc = metrics.accuracy();
+				double fMeasure = metrics.fMeasure();
+
+				JSONObject p_original_json = Utils.convertFrameToJson2Single(p_orginal.collectAsList());
+
+				JSONObject temp_res = new JSONObject();
+				temp_res.put("prediction", p_original_json);
+				temp_res.put("accuracy", acc);
+				temp_res.put("fMeasure", fMeasure);
+
+				res.put(model.get("model"), temp_res);
+
+
+
+
+			}
+			if (model.get("model").equals("decision_tree")){
+				dtModel = new DecisionTreeClassifier().fit(training);
+				Dataset<Row> predictions = dtModel.transform(testing);
+				predictions.show();
+
+				Transformer[] _stages = pipelineModel.stages();
+
+				StringIndexerModel temp = (StringIndexerModel)_stages[0];
+
+
+				IndexToString trs = new IndexToString().setLabels(temp.labels()).setInputCol("prediction").setOutputCol("prediction-original");
+				predictions = trs.transform(predictions);
+
+
+				System.out.println("-----<>-----"+model.get("model"));
+				predictions.show();
+
+				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select(outputCol+"Index", "prediction"));
+
+				System.out.println(metrics.accuracy());
+				System.out.println(metrics.fMeasure());
+
+				Dataset<Row> p_orginal = predictions.select("prediction-original");
+				double acc = metrics.accuracy();
+				double fMeasure = metrics.fMeasure();
+
+
+				JSONObject p_original_json = Utils.convertFrameToJson2Single(p_orginal.collectAsList());
+
+				JSONObject temp_res = new JSONObject();
+				temp_res.put("prediction", p_original_json);
+				temp_res.put("accuracy", acc);
+				temp_res.put("fMeasure", fMeasure);
+
+				res.put(model.get("model"), temp_res);
+
+
+			}
+			if (model.get("model").equals("naive_bayes")){
+				nbModel = new NaiveBayes().fit(training);
+				Dataset<Row> predictions = nbModel.transform(testing);
+				predictions.show();
+
+				Transformer[] _stages = pipelineModel.stages();
+
+				StringIndexerModel temp = (StringIndexerModel)_stages[0];
+
+
+				IndexToString trs = new IndexToString().setLabels(temp.labels()).setInputCol("prediction").setOutputCol("prediction-original");
+				predictions = trs.transform(predictions);
+
+
+				System.out.println("-----<>-----"+model.get("model"));
+				predictions.show();
+
+				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select(outputCol+"Index", "nb-prediction"));
+
+				System.out.println(metrics.accuracy());
+				System.out.println(metrics.fMeasure());
+
+				Dataset<Row> p_orginal = predictions.select("prediction-original");
+				double acc = metrics.accuracy();
+				double fMeasure = metrics.fMeasure();
+
+				JSONObject p_original_json = Utils.convertFrameToJson2Single(p_orginal.collectAsList());
+
+				JSONObject temp_res = new JSONObject();
+				temp_res.put("prediction", p_original_json);
+				temp_res.put("accuracy", acc);
+				temp_res.put("fMeasure", fMeasure);
+
+				res.put(model.get("model"), temp_res);
+
+
+
+			}
+
+
+
+
+		}
+
+		return new ResponseEntity<>(res, HttpStatus.OK);
+
 	}
 
 

@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import VisualizeModal from './VisualizeModal';
 import FilterModal from './FilterModal';
+import ModelModal from './ModelModal';
 
 class ExperimentNavbar extends Component{
     constructor(props){
@@ -8,12 +9,14 @@ class ExperimentNavbar extends Component{
         this.state = {
             showFilterModal: false,
             showVisualizeModal: false,
+            showModelModal: false,
             filters: [],
             modalType: ''
         };
 
         this.toggleFilterModal = this.toggleFilterModal.bind(this);
         this.toggleVisualizeModal = this.toggleVisualizeModal.bind(this);
+        this.toggleModelModal = this.toggleModelModal.bind(this);
         this.updateFilters = this.updateFilters.bind(this);
     }
 
@@ -33,6 +36,12 @@ class ExperimentNavbar extends Component{
         });
     }
 
+    toggleModelModal() {
+        this.setState({
+            showModelModal: !this.state.showModelModal,
+        });
+    }
+
     updateFilters(filter) {
         this.setState({
             filters: filter
@@ -43,6 +52,7 @@ class ExperimentNavbar extends Component{
     render() {
         let hideFilterModal = () => this.setState({showFilterModal: false});
         let hideVisualizeModal = () => this.setState({showVisualizeModal: false});
+        let hideModelModal = () => this.setState({showModelModal: false});
 
         return(
             <div className={"col-md-3 exp-sidebar"}>
@@ -54,6 +64,10 @@ class ExperimentNavbar extends Component{
                     <i className={"fas fa-exchange-alt"} />&nbsp;&nbsp;
                     <span>Apply filters</span>
                 </li>
+                <li className={"exp-links"} onClick={() => this.toggleModelModal()}>
+                    <i className={"fas fa-laptop-code"} />&nbsp;&nbsp;
+                    <span>Model Selection</span>
+                </li>
                 <VisualizeModal
                     show={this.state.showVisualizeModal}
                     onHide={hideVisualizeModal}
@@ -63,6 +77,11 @@ class ExperimentNavbar extends Component{
                     onHide={hideFilterModal}
                     headers={this.props.headers}
                     filters={this.updateFilters}
+                />
+                <ModelModal
+                    show={this.state.showModelModal}
+                    onHide={hideModelModal}
+                    headers={this.props.headers}
                 />
             </div>
         )

@@ -181,6 +181,7 @@ textarea {
 
 .filter-select {
   width: 100%;
+  height: 50px;
 }
 
 .dataset-table tbody tr:hover {
@@ -292,7 +293,7 @@ textarea {
   padding: 0;
 }
 
-.form-pad:first-child {
+.form-pad:first-child, .prepModel-div {
   padding-top: 15px;
 }
 
@@ -328,6 +329,7 @@ textarea {
   border-right: 1px solid #ccc;
   overflow-y: scroll;
   max-height: 400px;
+  padding-bottom: 30px;
 }
 
 .data-table th {
@@ -342,14 +344,40 @@ textarea {
 
 .visualize-modal .modal-lg {
   min-width: 85%;
-  padding-top: 20px;
+  padding-top: 30px;
 }
 
-.visualize-content {
+.lg-modal-content {
   min-height: 400px;
   max-height: 400px;
 }
 
 .chartjs-size-monitor canvas {
   height: 200px !important;
+}
+
+.stat-separator {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.bottom-pad {
+  margin-bottom: 20px;
+}
+
+.model-tabs {
+  border-bottom: 1px solid #ccc;
+}
+
+.model-tabs > div {
+  cursor: pointer;
+  padding: 10px;
+}
+
+.tab-active {
+  border-bottom: 3px solid #0070e0;
+}
+
+.model-modal .model-lg {
+  min-width: 85%;
 }

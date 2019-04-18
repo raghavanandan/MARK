@@ -17,11 +17,13 @@ class VisualizeModal extends Component {
             scatterData: '',
             chosenColumn: '',
             optionFilter: null,
-            statistics: '',
+            singleStats: '',
+            multiStats : ''
         };
 
-        this.showBarChart = this.showBarChart.bind(this);
+        this.showDetails = this.showDetails.bind(this);
         this.showScatterPlot = this.showScatterPlot.bind(this);
+        this.closeModal = this.closeModal.bind(this);
     }
 
     componentDidMount() {
@@ -46,11 +48,22 @@ class VisualizeModal extends Component {
             }
         }).catch((err) => {
             console.log(err);
-        })
+        });
     }
 
-    showBarChart(column, index) {
-        // console.log(column, index);
+    closeModal() {
+        this.setState({
+            chartData: '',
+            scatterData: '',
+            chosenColumn: '',
+            optionFilter: null,
+            singleStats: '',
+            multiStats : ''
+        });
+        this.props.onHide();
+    }
+
+    showDetails(column, index) {
         this.setState({chosenColumn: column});
         API.getColumnData(column).then((data) => {
             if (data !== 400) {
@@ -84,7 +97,19 @@ class VisualizeModal extends Component {
             }
         }).catch((err) => {
             console.log(err);
-        })
+        });
+
+        API.getStats(column).then((data) => {
+           if (data !== 400) {
+               let obj = {};
+               for(let key in data.docs) {
+                   obj[data.docs[key]['summary']] = data.docs[key][column]
+               }
+               this.setState({singleStats: obj, multiStats: ''});
+           }
+        }).catch((err) => {
+            console.log(err);
+        });
     }
 
     showScatterPlot(option) {
@@ -129,119 +154,228 @@ class VisualizeModal extends Component {
                 };
                 this.setState({
                     scatterData: temp
-                }, () => {
-                    console.log('Set', this.state.scatterData);
                 });
             }
         });
-    }
+
+        let query = this.state.chosenColumn + ',' + option.value;
+
+        API.getStats(query).then((data) => {
+            if (data !== 400) {
+                let obj = {'column1': this.state.chosenColumn, 'column2': option.value};
+                for (let key in data.docs) {
+                    obj[data.docs[key]['summary']] = [data.docs[key][this.state.chosenColumn], data.docs[key][option.value]];
+                }
+                this.setState({multiStats: obj, singleStats: ''});
+            }
+        }).catch((err) => {
+            console.log(err);
+        })
+    };
 
     render() {
         let options = [];
 
-        if (this.state.masterHeaders.length > 0) {
-            this.state.masterHeaders.map((value, index) => {
+        if (this.state.masterHeaders && this.state.masterHeaders.length > 0) {
+            this.state.masterHeaders.map((value) => {
                 if (!options.includes(value)) {
                     options.push({value: value['header'], label: value['header']});
                 }
             });
         }
 
-        return (
-            <Modal
-                show={this.props.show}
-                onHide={this.props.onHide}
-                size={"lg"}
-                className={"visualize-modal"}
-            >
-                <Modal.Header closeButton>
-                    <Modal.Title>
-                        Apply Filters
-                    </Modal.Title>
-                </Modal.Header>
-                <Modal.Body className={"col-md-12 visualize-content"}>
-                    <div className={"col-md-2 filter-option-div"}>
-                        <div className={(this.state.isMaster ? "active-link" : null)}
-                             onClick={() => this.setState({isMaster: true})}>Load Master Dataframe
+        if (this.state.masterHeaders) {
+            return (
+                <Modal
+                    show={this.props.show}
+                    onHide={this.closeModal}
+                    size={"lg"}
+                    className={"visualize-modal"}
+                >
+                    <Modal.Header closeButton>
+                        <Modal.Title>
+                            Visualize Dataset
+                        </Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body className={"col-md-12 lg-modal-content"}>
+                        <div className={"col-md-2 filter-option-div"}>
+                            <div className={(this.state.isMaster ? "active-link" : null)}
+                                 onClick={() => this.setState({isMaster: true})}>Load Master Dataframe
+                            </div>
+                            <div className={(!this.state.isMaster ? "active-link" : null)}
+                                 onClick={() => this.setState({isMaster: false})}>Load Filtered Dataframe
+                            </div>
                         </div>
-                        <div className={(!this.state.isMaster ? "active-link" : null)}
-                             onClick={() => this.setState({isMaster: false})}>Load Filtered Dataframe
-                        </div>
-                    </div>
-                    {this.state.isMaster ?
-                        <div className={"col-md-5 data-table-div"}>
-                            {options.length && this.state.chosenColumn ?
-                                <>
-                                    <div><b>Compare with:</b></div>
-                                    <Select
-                                        className={"compare-select"}
-                                        value={this.state.optionFilter}
-                                        onChange={this.showScatterPlot}
-                                        options={options}
-                                        isSearchable
-                                        autoFocus
-                                        name={"columns"}
-                                        classNamePrefix={"filter-options"}
-                                    /></> : null}
-                            <table className={"table data-table"}>
-                                <thead>
-                                <tr>
-                                    {this.state.masterHeaders.map((value, index) => (
-                                        <th className={"text-center"} key={index}
-                                            onClick={() => this.showBarChart(value['header'], index)}>{value['header']}</th>
-                                    ))}
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {this.state.masterData.map((value, index) => (
-                                    <tr className={"text-center"} key={index}>
-                                        {this.state.masterHeaders.map((header, index) => (
-                                            <td key={index}>{value[header['header']]}</td>
+                        {this.state.isMaster ?
+                            <div className={"col-md-5 data-table-div"}>
+                                {options.length && this.state.chosenColumn ?
+                                    <>
+                                        <div><b>Compare with:</b></div>
+                                        <Select
+                                            className={"compare-select"}
+                                            value={this.state.optionFilter}
+                                            onChange={this.showScatterPlot}
+                                            options={options}
+                                            isSearchable
+                                            autoFocus
+                                            name={"columns"}
+                                            classNamePrefix={"filter-options"}
+                                        /></> : null}
+                                <table className={"table data-table"}>
+                                    <thead>
+                                    <tr>
+                                        {this.state.masterHeaders.map((value, index) => (
+                                            <th className={"text-center"} key={index}
+                                                onClick={() => this.showDetails(value['header'], index)}>{value['header']}</th>
                                         ))}
                                     </tr>
-                                ))}
-                                </tbody>
-                            </table>
-                        </div> :
-                        <div className={"col-md-3 data-table-div"}>
-                            <table className={"table data-table"}>
-                                <thead>
-                                <tr>
-                                    {this.state.filterHeaders.map((value, index) => (
-                                        <th className={"text-center"} key={index}
-                                            onClick={() => this.showBarChart(value['header'], index)}>{value['header']}</th>
+                                    </thead>
+                                    <tbody>
+                                    {this.state.masterData.map((value, index) => (
+                                        <tr className={"text-center"} key={index}>
+                                            {this.state.masterHeaders.map((header, index) => (
+                                                <td key={index}>{value[header['header']]}</td>
+                                            ))}
+                                        </tr>
                                     ))}
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {this.state.filterData.map((value, index) => (
-                                    <tr className={"text-center"} key={index}>
-                                        {this.state.filterHeaders.map((header, index) => (
-                                            <td key={index}>{value[header['header']]}</td>
+                                    </tbody>
+                                </table>
+                            </div> :
+                            <div className={"col-md-5 data-table-div"}>
+                                <table className={"table data-table"}>
+                                    <thead>
+                                    <tr>
+                                        {this.state.filterHeaders.map((value, index) => (
+                                            <th className={"text-center"} key={index}
+                                                onClick={() => this.showDetails(value['header'], index)}>{value['header']}</th>
                                         ))}
                                     </tr>
-                                ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    <div className={"col-md-5"}>
-                        <h3>Statistics</h3>
-                        <hr/>
-                        <h3>Visualizations</h3>
-                        {this.state.chartData.labels && !this.state.scatterData.labels ?
-                            <Chart chartData={this.state.chartData}/> : null
+                                    </thead>
+                                    <tbody>
+                                    {this.state.filterData.map((value, index) => (
+                                        <tr className={"text-center"} key={index}>
+                                            {this.state.filterHeaders.map((header, index) => (
+                                                <td key={index}>{value[header['header']]}</td>
+                                            ))}
+                                        </tr>
+                                    ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         }
-                        {this.state.scatterData.labels ?
-                            <ScatterPlot chartData={this.state.scatterData} /> : null
-                        }
-                    </div>
-                </Modal.Body>
-                <div className={"btn-group"}>
+                        <div className={"data-table-div col-md-5"}>
+                            <h3>Statistics</h3>
+                            <hr className={"stat-separator"}/>
+                            {this.state.singleStats && !this.state.multiStats ?
+                                <div className={"no-pad bottom-pad col-md-12"}>
+                                    <span className={"col-md-6 text-left"}>
+                                        <b>Count:</b>
+                                    </span>
+                                    <span className={"col-md-6 text-left"}>
+                                        {this.state.singleStats.count}
+                                    </span>
+                                    <span className={"col-md-6 text-left"}>
+                                        <b>Mean:</b>
+                                    </span>
+                                    <span className={"col-md-6 text-left"}>
+                                        {this.state.singleStats.mean}
+                                    </span>
+                                    <span className={"col-md-6 text-left"}>
+                                        <b>Standard Deviation:</b>
+                                    </span>
+                                    <span className={"col-md-6 text-left"}>
+                                        {this.state.singleStats.stddev}
+                                    </span>
+                                    <span className={"col-md-6 text-left"}>
+                                        <b>Min:</b>
+                                    </span>
+                                    <span className={"col-md-6 text-left"}>
+                                        {this.state.singleStats.min}
+                                    </span>
+                                    <span className={"col-md-6 text-left"}>
+                                        <b>Max:</b>
+                                    </span>
+                                    <span className={"col-md-6 text-left"}>
+                                        {this.state.singleStats.max}
+                                    </span>
+                                </div> : null
+                            }
+                            {this.state.multiStats && !this.state.singleStats ?
+                                <div className={"no-pad bottom-pad col-md-12"}>
+                                    <span className={"col-md-3 col-md-offset-6 text-left"}>
+                                        <b>{this.state.multiStats.column1}</b>
+                                    </span>
+                                    <span className={"col-md-3 text-left"}>
+                                        <b>{this.state.multiStats.column2}</b>
+                                    </span>
+                                    <span className={"col-md-6 text-left"}>
+                                        <b>Count:</b>
+                                    </span>
+                                    <span className={"col-md-3 text-left"}>
+                                        {this.state.multiStats.count[0]}
+                                    </span>
+                                    <span className={"col-md-3 text-left"}>
+                                        {this.state.multiStats.count[1]}
+                                    </span>
+                                    <span className={"col-md-6 text-left"}>
+                                        <b>Mean:</b>
+                                    </span>
+                                    <span className={"col-md-3 text-left"}>
+                                        {this.state.multiStats.mean[0]}
+                                    </span>
+                                    <span className={"col-md-3 text-left"}>
+                                        {this.state.multiStats.mean[1]}
+                                    </span>
+                                    <span className={"col-md-6 text-left"}>
+                                        <b>Standard Deviation:</b>
+                                    </span>
+                                    <span className={"col-md-3 text-left"}>
+                                        {this.state.multiStats.stddev[0]}
+                                    </span>
+                                    <span className={"col-md-3 text-left"}>
+                                        {this.state.multiStats.stddev[1]}
+                                    </span>
+                                    <span className={"col-md-6 text-left"}>
+                                        <b>Min:</b>
+                                    </span>
+                                    <span className={"col-md-3 text-left"}>
+                                        {this.state.multiStats.min[0]}
+                                    </span>
+                                    <span className={"col-md-3 text-left"}>
+                                        {this.state.multiStats.min[1]}
+                                    </span>
+                                    <span className={"col-md-6 text-left"}>
+                                        <b>Max:</b>
+                                    </span>
+                                    <span className={"col-md-3 text-left"}>
+                                        {this.state.multiStats.max[0]}
+                                    </span>
+                                    <span className={"col-md-3 text-left"}>
+                                        {this.state.multiStats.max[1]}
+                                    </span>
 
-                </div>
-            </Modal>
-        )
+                                </div> : null
+                            }
+                            <h3>Visualizations</h3>
+                            <hr className={"stat-separator"}/>
+                            {this.state.chartData.labels && !this.state.scatterData.labels ?
+                                <Chart chartData={this.state.chartData}/> : null
+                            }
+                            {this.state.scatterData.labels ?
+                                <ScatterPlot chartData={this.state.scatterData} /> : null
+                            }
+                        </div>
+                    </Modal.Body>
+                    <div className={"btn-group"}>
+
+                    </div>
+                </Modal>
+            )
+        } else {
+            return null
+        }
+
+
     }
 }
 

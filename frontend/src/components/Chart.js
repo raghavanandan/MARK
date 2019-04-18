@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React from 'react';
 import {Bar, Scatter} from 'react-chartjs-2';
 
 export const Chart = (props) => {
@@ -21,7 +21,7 @@ export const Chart = (props) => {
 };
 
 export const ScatterPlot = (props) => {
-    console.log(props);
+
     return (
         <Scatter
             data={props.chartData}

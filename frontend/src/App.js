@@ -21,9 +21,15 @@ class App extends Component {
     }
 
     handleSectionChange(section) {
-        this.props.history.push({
-            pathname: `/${section}`
-        });
+        if (section !== 'home') {
+            this.props.history.push({
+                pathname: `/${section}`
+            });
+        } else {
+            this.props.history.push({
+                pathname: `/`
+            });
+        }
     }
 
     componentDidMount() {
@@ -43,9 +49,10 @@ class App extends Component {
                         <SideNavbar section={this.handleSectionChange}/>
                     </div>
                     <div className={"col-md-10 container-div"}>
-                        <Route exact path={"/home"} render={(props) => <MainLayout {...props} section={"home"}/>}/>
-                        <Route exact path={"/experiments"} render={(props) => <MainLayout {...props} section={"experimentlist"}/>}/>
-                            <Route exact path={"/experiments/:expId"} render={(props) => <WorkspaceLayout {...props} />}/>
+                        <Route exact path={"/"} render={(props) => <MainLayout {...props} section={"home"}/>}/>
+                        <Route exact path={"/experiments"}
+                               render={(props) => <MainLayout {...props} section={"experimentlist"}/>}/>
+                        <Route exact path={"/experiments/:expId"} render={(props) => <WorkspaceLayout {...props} />}/>
                         <Route exact path={"/datasets"}
                                render={(props) => <MainLayout {...props} section={"datasets"}/>}/>
                     </div>

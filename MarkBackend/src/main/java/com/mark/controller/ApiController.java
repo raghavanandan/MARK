@@ -365,7 +365,7 @@ public class ApiController {
 
 
 	@RequestMapping(value="prepare-model",  method = RequestMethod.POST, produces =MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Response> prepareModel(@RequestBody ModelSelection modelSelection){
+	public ResponseEntity<JSONObject> prepareModel(@RequestBody ModelSelection modelSelection){
 
 		System.out.println("ModelData "+modelSelection);
 
@@ -436,8 +436,19 @@ public class ApiController {
 		testing = ds[1];
 
 		preppedDataDF.show();
+		
+		
+		List<Row> training_json = training.collectAsList();
+		JSONObject training_set = Utils.convertFrameToJson2Cols(training_json, currentDf.columns());
+		List<Row> testing_json = testing.collectAsList();
+		JSONObject testing_set = Utils.convertFrameToJson2Cols(testing_json, currentDf.columns());
+		
+		JSONObject res = new JSONObject();
+		
+		res.put("training_set", training_set);
+		res.put("testing_set", testing_set);
 
-		return null;
+		return new ResponseEntity<>(res, HttpStatus.OK);
 
 	}
 

@@ -693,6 +693,8 @@ public class ApiController {
 				Dataset<Row> p_orginal = predictions.select("prediction-original");
 				double acc = metrics.accuracy();
 				double fMeasure = metrics.fMeasure();
+				double precision = metrics.precision();
+				double recall = metrics.recall();
 
 				JSONObject p_original_json = Utils.convertFrameToJson2Single(p_orginal.collectAsList());
 
@@ -700,6 +702,8 @@ public class ApiController {
 				temp_res.put("prediction", p_original_json);
 				temp_res.put("accuracy", acc);
 				temp_res.put("fMeasure", fMeasure);
+				temp_res.put("precision", precision);
+				temp_res.put("recall", recall);
 
 				res.put(model.get("model"), temp_res);
 			}
@@ -729,6 +733,8 @@ public class ApiController {
 				Dataset<Row> p_orginal = predictions.select("prediction-original");
 				double acc = metrics.accuracy();
 				double fMeasure = metrics.fMeasure();
+				double precision = metrics.precision();
+				double recall = metrics.recall();
 
 				JSONObject p_original_json = Utils.convertFrameToJson2Single(p_orginal.collectAsList());
 
@@ -736,7 +742,8 @@ public class ApiController {
 				temp_res.put("prediction", p_original_json);
 				temp_res.put("accuracy", acc);
 				temp_res.put("fMeasure", fMeasure);
-
+				temp_res.put("precision", precision);
+				temp_res.put("recall", recall);
 				res.put(model.get("model"), temp_res);
 
 

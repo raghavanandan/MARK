@@ -87,6 +87,9 @@ public class Mongo {
 		JSONArray jsArray = new JSONArray();
 		for(Document doc : meta) {
 //			System.out.println("inside loop "+doc.getString("country"));
+			ObjectId id = doc.getObjectId("_id");
+			doc.remove("_id");
+			doc.put("doc_id", id.toString());
 			jsArray.add(doc);
 		}
 		return jsArray;

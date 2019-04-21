@@ -19,6 +19,7 @@ import org.apache.spark.ml.classification.NaiveBayes;
 import org.apache.spark.ml.classification.NaiveBayesModel;
 import org.apache.spark.ml.classification.RandomForestClassificationModel;
 import org.apache.spark.ml.classification.RandomForestClassifier;
+import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator;
 import org.apache.spark.ml.classification.GBTClassificationModel;
 import org.apache.spark.ml.classification.GBTClassifier;
 import org.apache.spark.ml.feature.IndexToString;
@@ -26,6 +27,10 @@ import org.apache.spark.ml.feature.OneHotEncoder;
 import org.apache.spark.ml.feature.StringIndexer;
 import org.apache.spark.ml.feature.StringIndexerModel;
 import org.apache.spark.ml.feature.VectorAssembler;
+import org.apache.spark.ml.param.ParamMap;
+import org.apache.spark.ml.tuning.CrossValidator;
+import org.apache.spark.ml.tuning.CrossValidatorModel;
+import org.apache.spark.ml.tuning.ParamGridBuilder;
 import org.apache.spark.mllib.evaluation.MulticlassMetrics;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -92,7 +97,7 @@ public class ApiController {
 	}
 
 	@RequestMapping(value = "upload-file", method = RequestMethod.POST, produces =MediaType.APPLICATION_JSON_VALUE )
-	public ResponseEntity<Response> uploadFile(@RequestParam("file") MultipartFile file){
+	public ResponseEntity<Response> uploadFile(@RequestParam("file") MultipartFile file,@RequestParam("name") String name, @RequestParam("description") String description){
 
 		String fpath = null;
 		try {
@@ -106,13 +111,21 @@ public class ApiController {
 		}
 		System.out.println("filepath: "+fpath);
 
-		return new ResponseEntity<>(fileParser.parseFile(fpath), HttpStatus.OK);
+		return new ResponseEntity<>(fileParser.parseFile(fpath, name, description), HttpStatus.OK);
 	}
 
 	@RequestMapping("get-doc")
 	public ResponseEntity<JSONObject> getDoc(@RequestParam("docId") String docId) {
 
 		JSONObject result = mongo.getDoc(docId);
+
+		return new ResponseEntity<>(result, HttpStatus.OK);
+	}
+	
+	@RequestMapping("get-docs")
+	public ResponseEntity<JSONArray> getDocs() {
+
+		JSONArray result = mongo.getDocs();
 
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
@@ -181,7 +194,9 @@ public class ApiController {
 	public ResponseEntity<JSONObject> createMasterDataFrame(@RequestParam("docId") String docId) {
 
 		JSONObject result = mongo.getDoc(docId);
+		System.out.println("mongo fetch");
 		JavaSparkContext sc = JavaSparkContext.fromSparkContext(sparkSession.sparkContext());
+		System.out.println("appid 1->"+sc.sc().applicationId());
 		JSONArray jsn = new JSONArray();
 
 		List<Document> jsonArray = (List<Document>) result.get("docs");
@@ -189,6 +204,7 @@ public class ApiController {
 		for (Document obj :jsonArray) {
 			jsn.add(obj);
 		}
+		System.out.println("added json fetch");
 		try (FileWriter file = new FileWriter("/tmp/file1.txt")) {
 			file.write(jsn.toJSONString());
 			System.out.println("Successfully Copied JSON Object to File...");
@@ -197,18 +213,20 @@ public class ApiController {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		System.out.println("appid 1->"+sc.sc().applicationId());
 		masterDf = sparkSession.read().json("/tmp/file1.txt");
-		masterDf.show();
-
+//		masterDf.show();
+		System.out.println("added masterdf fetch");
+		System.out.println("appid 1->"+sc.sc().applicationId());
 
 		List<Row> x = masterDf.collectAsList();
 		JSONObject js = Utils.convertFrameToJson2(x);
 		//		System.out.println(js);
-
+		System.out.println("added frameconvert fetch");
 		Tuple2<String, String>[] dtypes = masterDf.dtypes();
 
 		JSONArray header = Utils.getTypes(dtypes);
-
+		
 		js.put("header", header);
 
 		return new ResponseEntity<>(js, HttpStatus.OK);
@@ -522,50 +540,42 @@ public class ApiController {
 			
 			
 			
-//			if (model.get("model").equals("logistic_regression")){
-//				MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
-//		     	LogisticRegression lr = new LogisticRegression();
-//		     	ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(lr.elasticNetParam(), new double[] {0.0, 0.5, 1.0}).addGrid(lr.regParam(), new double[] {0.01, 0.5, 2.0}).addGrid(lr.maxIter(), new int[] {1, 5, 10});
-//		     	ParamMap[] pMap = paramGrid.build();
-//		     	CrossValidator cv = new CrossValidator().setNumFolds(5).setEstimator(lr).setEstimatorParamMaps(pMap).setEvaluator(mce);
-//		     	CrossValidatorModel cvm = cv.fit(training);
-//		     	System.out.println(cvm.explainParams());
-//		     	System.out.println(cvm.bestModel().explainParams());
-//		     	Dataset<Row> predictions2 = cvm.transform(testing);
-//		     	for(double d : cvm.avgMetrics()) {
-//		     		System.out.println(d);
-//		     	}
-//		     	predictions2.show();
-//		     	System.out.println(mce.evaluate(predictions2));
-//			}
-			
-
 			if (model.get("model").equals("logistic_regression")){
-				lrModel = new LogisticRegression().fit(training);
-				Dataset<Row> predictions = lrModel.transform(testing);
-				predictions.show();
-
-				Transformer[] _stages = pipelineModel.stages();
+				MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
+		     	LogisticRegression lr = new LogisticRegression();
+		     	ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(lr.elasticNetParam(), new double[] {0.0, 0.5, 1.0}).addGrid(lr.regParam(), new double[] {0.01, 0.5, 2.0}).addGrid(lr.maxIter(), new int[] {1, 5, 10});
+		     	ParamMap[] pMap = paramGrid.build();
+		     	CrossValidator cv = new CrossValidator().setNumFolds(5).setEstimator(lr).setEstimatorParamMaps(pMap).setEvaluator(mce);
+		     	CrossValidatorModel cvm = cv.fit(training);
+		     	//System.out.println("explains param "+cvm.explainParams());
+		     	System.out.println("best model params "+cvm.bestModel().explainParams());
+		     	Dataset<Row> predictions2 = cvm.transform(testing);
+		     	for(double d : cvm.avgMetrics()) {
+		     		System.out.println("mteric "+d);
+		     	}
+		     	predictions2.show();
+		     	System.out.println(mce.evaluate(predictions2));
+		     	
+		     	Transformer[] _stages = pipelineModel.stages();
 
 				StringIndexerModel temp = (StringIndexerModel)_stages[0];
 
 
 				IndexToString trs = new IndexToString().setLabels(temp.labels()).setInputCol("prediction").setOutputCol("prediction-original");
-				predictions = trs.transform(predictions);
-
-
-				System.out.println("-----<>-----"+model.get("model"));
-				predictions.show();
-
-				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select(outputCol+"Index", "prediction"));
+				predictions2 = trs.transform(predictions2);
+				
+				
+				MulticlassMetrics metrics = new MulticlassMetrics(predictions2.select("label", "prediction"));
 
 				System.out.println(metrics.accuracy());
 				System.out.println(metrics.fMeasure());
-				Dataset<Row> p_orginal = predictions.select("prediction-original");
+
+				Dataset<Row> p_orginal = predictions2.select("prediction-original");
 				double acc = metrics.accuracy();
 				double fMeasure = metrics.fMeasure();
 				double precision = metrics.precision();
 				double recall = metrics.recall();
+
 
 				JSONObject p_original_json = Utils.convertFrameToJson2Single(p_orginal.collectAsList());
 
@@ -577,11 +587,56 @@ public class ApiController {
 				temp_res.put("recall", recall);
 
 				res.put(model.get("model"), temp_res);
-
-
-
-
 			}
+			
+
+//			if (model.get("model").equals("logistic_regression")){
+//				lrModel = new LogisticRegression().fit(training);
+//				
+//				Dataset<Row> predictions = lrModel.transform(testing);
+//				predictions.show();
+//
+//				Transformer[] _stages = pipelineModel.stages();
+//
+//				StringIndexerModel temp = (StringIndexerModel)_stages[0];
+//
+//
+//				IndexToString trs = new IndexToString().setLabels(temp.labels()).setInputCol("prediction").setOutputCol("prediction-original");
+//				predictions = trs.transform(predictions);
+//
+//
+//				System.out.println("-----<>-----"+model.get("model"));
+//				predictions.show();
+//
+////				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select(outputCol+"Index", "prediction"));
+//				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select("label", "prediction"));
+//
+//				System.out.println(metrics.accuracy());
+//				System.out.println(metrics.fMeasure());
+//				Dataset<Row> p_orginal = predictions.select("prediction-original");
+//				double acc = metrics.accuracy();
+//				double fMeasure = metrics.fMeasure();
+//				double precision = metrics.precision();
+//				double recall = metrics.recall();
+//
+//				JSONObject p_original_json = Utils.convertFrameToJson2Single(p_orginal.collectAsList());
+//
+//				JSONObject temp_res = new JSONObject();
+//				temp_res.put("prediction", p_original_json);
+//				temp_res.put("accuracy", acc);
+//				temp_res.put("fMeasure", fMeasure);
+//				temp_res.put("precision", precision);
+//				temp_res.put("recall", recall);
+//				
+//				System.out.println(metrics.precision());
+//				System.out.println(metrics.recall());
+//
+//				res.put(model.get("model"), temp_res);
+//
+//
+//
+//
+//			}
 			if (model.get("model").equals("decision_tree")){
 				dtModel = new DecisionTreeClassifier().fit(training);
 				Dataset<Row> predictions = dtModel.transform(testing);

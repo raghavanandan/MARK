@@ -11,6 +11,7 @@ import org.bson.conversions.Bson;
 import org.bson.BSON;
 import org.bson.types.ObjectId;
 import org.dmg.pmml.Array;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.mortbay.util.ajax.JSON;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,7 +60,7 @@ public class Mongo {
 		
 		List<Document> uploadDocs = new ArrayList<>();
 		for(Document doc : uploadData) {
-			System.out.println("inside loop "+doc.getString("country"));
+//			System.out.println("inside loop "+doc.getString("country"));
 			uploadDocs.add(doc);
 		}
 		
@@ -71,12 +72,26 @@ public class Mongo {
 		
 		obj.put("docs", uploadDocs);
 		
-		System.out.println(obj);
+//		System.out.println(obj);
 		
 		return obj;
 		
 
 	}
+	
+	
+	public JSONArray getDocs() {
+		MongoDatabase db = mc.getDatabase("mark");
+		MongoCollection<Document> metaCol = db.getCollection("docsMeta");
+		FindIterable<Document> meta = metaCol.find();
+		JSONArray jsArray = new JSONArray();
+		for(Document doc : meta) {
+//			System.out.println("inside loop "+doc.getString("country"));
+			jsArray.add(doc);
+		}
+		return jsArray;
+	}
+	
 
 	public String insertOne(String js) {
 		MongoDatabase db = mc.getDatabase("mark");
@@ -115,6 +130,16 @@ public class Mongo {
 		return true;
 
 
+	}
+
+
+	public String insertFileMeta(String js, JSONObject info) {
+		MongoDatabase db = mc.getDatabase("mark");
+		MongoCollection<Document> col = db.getCollection("docsMeta");
+
+		Document doc = Document.parse(js);
+		col.insertOne(doc);
+		return doc.getObjectId("_id").toString();
 	}
 
 

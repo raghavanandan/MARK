@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -25,7 +26,7 @@ public class FileParser {
 	@Autowired
 	private Mongo mongo;
 
-	public Response parseFile(String filePath) {
+	public Response parseFile(String filePath, String name, String description) {
 
 
 		Reader reader = null;
@@ -53,11 +54,14 @@ public class FileParser {
 		ArrayList<HashMap<String, Object>> records = new ArrayList<HashMap<String, Object>>();
 
 		
-		HashMap<String, Object[]> meta = new HashMap<>();
+		HashMap<String, Object> meta = new HashMap<>();
 		
 		meta.put("header", header);
+		meta.put("name", name);
+		meta.put("description", description);
 		
 		String js = new Gson().toJson(meta);
+		
 		
 		String objectId = mongo.insertOne(js);
 		
@@ -90,5 +94,7 @@ public class FileParser {
 
 
 	}
+
+	
 
 }

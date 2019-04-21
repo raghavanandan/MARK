@@ -6,6 +6,7 @@ import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 
 import org.json.simple.JSONObject;
@@ -59,6 +60,7 @@ public class FileParser {
 		meta.put("header", header);
 		meta.put("name", name);
 		meta.put("description", description);
+		meta.put("timestamp", Calendar.getInstance().getTimeInMillis());
 		
 		String js = new Gson().toJson(meta);
 		

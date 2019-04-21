@@ -1,0 +1,39 @@
+{
+  "models": [
+    "Decision Tree",
+    "Logistic Regression",
+    "Naive Bayes",
+    "Random Forest",
+    "Gradient Boosted Trees"
+  ],
+  "hyper_params": {
+    "Logistic Regression": [
+      "elasticNetParam",
+      "maxIter",
+      "regParam",
+      "tol"
+    ],
+    "Decision Tree": [
+      "maxBins",
+      "maxDepth",
+      "minInfoGain",
+      "minInstancesperNode"
+    ],
+    "Naive Bayes": [
+      "smoothing"
+    ],
+    "Random Forest": [
+      "maxBins",
+      "maxDepth",
+      "minInfoGain",
+      "numTrees"
+    ],
+    "Gradient Boosted Trees": [
+      "maxBins",
+      "maxDepth",
+      "maxIter",
+      "stepSize",
+      "subSamplingRate"
+    ]
+  }
+}

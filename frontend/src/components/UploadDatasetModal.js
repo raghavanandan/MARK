@@ -38,7 +38,6 @@ class UploadDatasetModal extends Component {
         this.props.onSubmit(fileData);
         this.props.onHide();
         event.stopPropagation();
-        // this.setState({validated: true});
     }
 
     render() {
@@ -63,7 +62,7 @@ class UploadDatasetModal extends Component {
                         </Form.Group>
                         <Form.Group controlId={"formBasicName"}>
                             <Form.Label>Enter a name for the dataset: <span className={"required"}>*</span></Form.Label>
-                            <Form.Control type="text" required/>
+                            <Form.Control type="text" placeholder={"Name of the file"} required/>
                         </Form.Group>
                         <Form.Group controlId={"formBasicDescription"}>
                             <Form.Label>Provide an description (optional):</Form.Label>

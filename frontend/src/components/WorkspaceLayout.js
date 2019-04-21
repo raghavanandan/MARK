@@ -9,11 +9,13 @@ class WorkspaceLayout extends Component {
             expId: '',
             headers: [],
             filters: {},
+            isExpanded: true,
         };
 
         this.renderWorkspace = this.renderWorkspace.bind(this);
         this.loadHeaders = this.loadHeaders.bind(this);
         this.updateFilters = this.updateFilters.bind(this);
+        this.updateView = this.updateView.bind(this);
     }
 
     componentDidMount() {
@@ -22,6 +24,10 @@ class WorkspaceLayout extends Component {
 
     loadHeaders(headers) {
         this.setState({headers})
+    }
+
+    updateView(option) {
+        this.setState({isExpanded: option}, () => console.log(this.state.isExpanded));
     }
 
     updateFilters(filter) {
@@ -38,8 +44,8 @@ class WorkspaceLayout extends Component {
     renderWorkspace() {
         return (
             <>
-                <DatasetTable filters={this.state.filters} expId={this.state.expId} headers={this.loadHeaders}/>
-                {this.state.headers.length ? <ExperimentNavbar filters={this.updateFilters} headers={this.state.headers}/> : null }
+                <DatasetTable filters={this.state.filters} expId={this.state.expId} updateView={this.state.isExpanded} headers={this.loadHeaders}/>
+                {this.state.headers.length ? <ExperimentNavbar filters={this.updateFilters} isExpanded={this.updateView} headers={this.state.headers}/> : null }
             </>
         )
     }
@@ -48,8 +54,8 @@ class WorkspaceLayout extends Component {
         if (this.state.filters.header !== undefined && this.state.filters.header.length > 0) {
             return (
                 <>
-                    <DatasetTable filters={this.state.filters} />
-                    {this.state.headers.length ? <ExperimentNavbar filters={this.updateFilters} headers={this.state.headers}/> : null }
+                    <DatasetTable filters={this.state.filters} updateView={this.state.isExpanded} />
+                    {this.state.headers.length ? <ExperimentNavbar filters={this.updateFilters} isExpanded={this.updateView} headers={this.state.headers}/> : null }
                 </>
             )
         } else if (this.state.expId) {

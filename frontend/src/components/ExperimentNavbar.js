@@ -11,7 +11,8 @@ class ExperimentNavbar extends Component{
             showVisualizeModal: false,
             showModelModal: false,
             filters: [],
-            modalType: ''
+            modalType: '',
+            isExpanded: true
         };
 
         this.toggleFilterModal = this.toggleFilterModal.bind(this);
@@ -45,7 +46,7 @@ class ExperimentNavbar extends Component{
     updateFilters(filter) {
         this.setState({
             filters: filter
-        }, () => console.log(this.state));
+        });
         this.props.filters(filter);
     }
 
@@ -55,18 +56,26 @@ class ExperimentNavbar extends Component{
         let hideModelModal = () => this.setState({showModelModal: false});
 
         return(
-            <div className={"col-md-3 exp-sidebar"}>
+            <div className={(this.state.isExpanded ? "col-md-3" : "col-md-1") + " exp-sidebar"}>
+                <div className={"hide-show-icon pull-right"} onClick={() => {
+                    this.setState({isExpanded: !this.state.isExpanded}, () => this.props.isExpanded(this.state.isExpanded));
+                }}>
+                    {this.state.isExpanded ?
+                        <i className={"fas fa-angle-double-right"}/> :
+                        <i className={"fas fa-angle-double-left"}/>
+                    }
+                </div>
                 <li className={"exp-links"} onClick={() => this.toggleVisualizeModal()} >
                     <i className={"fas fa-eye"} />&nbsp;&nbsp;
-                    <span>Visualize Dataset</span>
+                    {this.state.isExpanded ? <span>Visualize Dataset</span> : null}
                 </li>
                 <li className={"exp-links"} onClick={() => this.toggleFilterModal()}>
                     <i className={"fas fa-exchange-alt"} />&nbsp;&nbsp;
-                    <span>Apply filters</span>
+                    {this.state.isExpanded ? <span>Apply filters</span> : null}
                 </li>
                 <li className={"exp-links"} onClick={() => this.toggleModelModal()}>
                     <i className={"fas fa-laptop-code"} />&nbsp;&nbsp;
-                    <span>Model Selection</span>
+                    {this.state.isExpanded ? <span>Model Selection</span> : null}
                 </li>
                 <VisualizeModal
                     show={this.state.showVisualizeModal}

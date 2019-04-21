@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import * as API from '../api/API';
-import * as PARAMS from './params';
+import * as PARAMS from '../utils/params';
 
 class DatasetTable extends Component {
     constructor(props) {
@@ -13,7 +13,8 @@ class DatasetTable extends Component {
             model: '',
             model_params: [],
             hyper_params: [],
-            reset: false
+            reset: false,
+            expandTable: false,
         };
 
         this.handleInputParams = this.handleInputParams.bind(this);
@@ -23,12 +24,15 @@ class DatasetTable extends Component {
     }
 
     componentWillReceiveProps(nextProps, nextContext) {
+        this.setState({
+           expandTable: nextProps.updateView
+        });
         if (Object.keys(nextProps.filters).length > 0) {
             this.setState({
                 file: nextProps.filters.docs,
                 headers: nextProps.filters.header,
                 reset: true
-            }, () => console.log(this.state));
+            });
         }
     }
 
@@ -60,7 +64,6 @@ class DatasetTable extends Component {
                 this.state.input_params.splice(index, 1);
             }
         }
-        console.log(this.state.input_params);
     }
 
     handleModelParams(e) {
@@ -80,7 +83,19 @@ class DatasetTable extends Component {
 
     resetFrame() {
         API.resetDF().then((data) => {
-            console.log(data);
+            // console.log(data);
+            if (data !== 400) {
+                let headerArr = [];
+                for (let key in data.header) {
+                    // console.log(data.header[key]);
+                    headerArr.push(data.header[key].header)
+                }
+                this.setState({
+                    file: data.docs,
+                    headers: headerArr,
+                    reset: false
+                })
+            }
         }).catch((err) => {
             console.log(err);
         })
@@ -94,7 +109,7 @@ class DatasetTable extends Component {
         }
 
         return (
-            <div className={'col-md-9 top-pad fluid-container'}>
+            <div className={(!this.state.expandTable ? "col-md-11" : "col-md-9") + " top-pad fluid-container"}>
                 <div className={"col-md-12"}>
                     <div className={"header-add-new"}>
                         <span className={"legend-heading"}>Experiment - 1</span>
@@ -114,11 +129,11 @@ class DatasetTable extends Component {
                     <div className={"file-table " + (this.state.filter ? "col-md-7" : "col-md-12") + " table-responsive"}>
                         <table className={'table table-striped'}>
                             <thead>
-                            <tr>
-                                {this.state.headers.map((value, index) => (
-                                    <th className={"text-center"} key={index}>{value}</th>
-                                ))}
-                            </tr>
+                                <tr>
+                                    {this.state.headers.map((value, index) => (
+                                        <th className={"text-center"} key={index}>{value}</th>
+                                    ))}
+                                </tr>
                             </thead>
                             <tbody>
                             {this.state.file.map((value, index) => (

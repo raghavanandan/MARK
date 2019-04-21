@@ -1,22 +1,46 @@
 import React, {Component} from 'react';
 import UploadDatasetModal from './UploadDatasetModal';
 import * as API from '../api/API';
+import moment from 'moment';
 
 class DataSetList extends Component{
     constructor(props){
         super(props);
         this.state = {
             addNew: false,
+            datasets: [],
         };
 
         this.handleFileUpload = this.handleFileUpload.bind(this);
         this.toggleUpload = this.toggleUpload.bind(this);
         this.createDataframe = this.createDataframe.bind(this);
+        this.refreshFiles = this.refreshFiles.bind(this);
+    }
+
+    componentDidMount() {
+        this.refreshFiles();
+    }
+
+    refreshFiles() {
+        API.getFiles().then((data) => {
+            if (data !== 400) {
+                for (let key in data) {
+                    let temp = moment(data[key]['timestamp']).format("MMM DD, YYYY");
+                    data[key]['timestamp'] = temp;
+                }
+                this.setState({datasets: data});
+            }
+        }).catch((err) => {
+            console.log(err);
+        })
     }
 
     handleFileUpload(fileData){
-        API.putFile(fileData.file).then((data) => {
-            localStorage.setItem('docId', data.docId)
+        API.putFile(fileData).then((data) => {
+            if (data !== 400) {
+                localStorage.setItem('docId', data.docId);
+                this.refreshFiles();
+            }
         }).catch((err) => {
             console.log(err);
         });
@@ -28,17 +52,14 @@ class DataSetList extends Component{
         });
     }
 
-    createDataframe() {
-        let docId = localStorage.getItem('docId');
-        if (docId !== "null" && docId !== "undefined") {
-            API.createDF(docId).then((data) => {
-                if (data !== null && data !== undefined && data !== 400) {
-                    console.log(data);
-                }
-            }).catch((err) => {
-                console.log(err);
-            })
-        }
+    createDataframe(docId) {
+        API.createDF(docId).then((data) => {
+            if (data !== null && data !== undefined && data !== 400) {
+                console.log(data);
+            }
+        }).catch((err) => {
+            console.log(err);
+        });
     }
 
     render() {
@@ -62,29 +83,34 @@ class DataSetList extends Component{
                 </div>
 
                 {/*Table*/}
+                {this.state.datasets.length ?
                 <div className={"col-md-10 table-div"}>
                     <table className={"table dataset-table"}>
                         <thead>
                             <tr>
+                                <th></th>
                                 <th>Name</th>
+                                <th>Description</th>
                                 <th>Created</th>
-                                <th>Last Modified</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td className={"dataset-name"}>biostat.csv</td>
-                                <td>Apr 05, 2019</td>
-                                <td>
-                                    <span>Apr 06, 2019</span>
-                                    <span className={"pull-right table-options"} onClick={this.createDataframe}>
-                                        Create master dataframe
-                                    </span>
-                                </td>
-                            </tr>
+                            {this.state.datasets.map((value, index) => (
+                                <tr key={index}>
+                                    <td>{index+1}</td>
+                                    <td className={"dataset-name"}>{value.name}</td>
+                                    <td>{value.description}</td>
+                                    <td>
+                                        <span>{value.timestamp}</span>
+                                        <span className={"pull-right table-options"} onClick={() => this.createDataframe(value.doc_id)}>
+                                            Create master dataframe
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
-                </div>
+                </div> : null }
 
                 {/*Upload new dataset*/}
                 {this.state.addNew ?

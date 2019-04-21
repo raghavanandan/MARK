@@ -16,7 +16,8 @@ class ExperimentList extends Component {
         this.setState({expId: id});
     }
 
-    chooseExperiment() {
+    chooseExperiment(e) {
+        // console.log(e);
         this.props.expId(this.state.expId);
     }
 
@@ -26,12 +27,12 @@ class ExperimentList extends Component {
                 <div className={"col-md-12"}>
                     <div className={"header-add-new"}>
                         <span className={"legend-heading"}>Experiments</span>
-                        {/*<span className={"add-new pull-right"} onClick={() => this.toggleUpload()}>*/}
-                            {/*<button className={"add-new-btn"}>*/}
-                            {/*<i className={"fas fa-plus"} />*/}
-                                {/*&nbsp; Add new*/}
-                            {/*</button>*/}
-                        {/*</span>*/}
+                        <span className={"add-new pull-right"} onClick={() => this.toggleUpload()}>
+                            <button className={"add-new-btn"}>
+                            <i className={"fas fa-plus"} />
+                                &nbsp; Add new
+                            </button>
+                        </span>
                     </div>
                     <hr className={"legend-separator"} />
                 </div>
@@ -39,6 +40,7 @@ class ExperimentList extends Component {
                     <table className={"table experiment-table"}>
                         <thead>
                             <tr>
+                                <th></th>
                                 <th>Name</th>
                                 <th>Created</th>
                                 <th>Last Modified</th>
@@ -46,7 +48,8 @@ class ExperimentList extends Component {
                         </thead>
                         <tbody>
                             <tr>
-                                <td className={"experiment-name"} onClick={() => this.chooseExperiment()}>Evaluating biostat file</td>
+                                <td>1</td>
+                                <td className={"experiment-name"} onClick={(e) => this.chooseExperiment(e)}>Evaluating adult_income file</td>
                                 <td>Apr 05, 2019</td>
                                 <td>Apr 06, 2019</td>
                             </tr>

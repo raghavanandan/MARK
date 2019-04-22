@@ -51,8 +51,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.mark.pojo.DT;
 import com.mark.pojo.LR;
 import com.mark.pojo.ModelSelection;
+import com.mark.pojo.NB;
 import com.mark.pojo.Response;
 import com.mark.pojo.StringParser;
 import com.mark.storage.Mongo;
@@ -92,11 +94,11 @@ public class ApiController {
 	private static Dataset<Row> training;
 
 	private static Dataset<Row> testing;
-	
+
 	private static DecimalFormat df2 = new DecimalFormat("#.##");
-	
+
 	private static final int limit = 50;
-	
+
 	@RequestMapping("wordcount")
 	public ResponseEntity<List<Count>> words() {
 		return new ResponseEntity<>(wordCount.count(), HttpStatus.OK);
@@ -366,7 +368,7 @@ public class ApiController {
 		cols = columns.toArray(cols);
 
 		Dataset<Row> stats = currentDf.describe();
-		
+
 		stats.show();
 
 		Dataset<Row> col1 = stats.select(stats.col("summary"), stats.col(columns.get(0)));
@@ -550,6 +552,9 @@ public class ApiController {
 
 			if (model.get("model").equals("logistic_regression")){
 
+				Dataset<Row> predictions = null;
+
+				String best_params = "";
 
 				if (model.get("hyper_params")!=null) {
 
@@ -560,24 +565,32 @@ public class ApiController {
 					lrPojo.setMaxIter(hyperParams.get("maxIter"));
 					lrPojo.setRegParam(hyperParams.get("regParam"));
 					lrPojo.setTol(hyperParams.get("tol"));
-					
+
 					System.out.println("LR POJO -> "+lrPojo);
+					MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
+					LogisticRegression lr = new LogisticRegression();
+					ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(lr.elasticNetParam(), lrPojo.getElasticNetParam()).addGrid(lr.regParam(), lrPojo.getRegParam()).addGrid(lr.maxIter(), lrPojo.getMaxIter());
+					ParamMap[] pMap = paramGrid.build();
+					CrossValidator cv = new CrossValidator().setNumFolds(Integer.valueOf(String.valueOf(model.get("kfold")))).setEstimator(lr).setEstimatorParamMaps(pMap).setEvaluator(mce);
+					CrossValidatorModel cvm = cv.fit(training);
+					//System.out.println("explains param "+cvm.explainParams());
+					System.out.println("best model params "+cvm.bestModel().explainParams());
+					best_params = cvm.bestModel().explainParams();
+					predictions = cvm.transform(testing);
+					for(double d : cvm.avgMetrics()) {
+						System.out.println("mteric "+d);
+					}
+					System.out.println(mce.evaluate(predictions));
+				}
+				else {
+					lrModel = new LogisticRegression().fit(training);
+					predictions = lrModel.transform(testing);
 				}
 
-				MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
-				LogisticRegression lr = new LogisticRegression();
-				ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(lr.elasticNetParam(), new double[] {0.0, 0.5, 1.0}).addGrid(lr.regParam(), new double[] {0.01, 0.5, 2.0}).addGrid(lr.maxIter(), new int[] {1, 5, 10});
-				ParamMap[] pMap = paramGrid.build();
-				CrossValidator cv = new CrossValidator().setNumFolds(5).setEstimator(lr).setEstimatorParamMaps(pMap).setEvaluator(mce);
-				CrossValidatorModel cvm = cv.fit(training);
-				//System.out.println("explains param "+cvm.explainParams());
-				System.out.println("best model params "+cvm.bestModel().explainParams());
-				Dataset<Row> predictions2 = cvm.transform(testing);
-				for(double d : cvm.avgMetrics()) {
-					System.out.println("mteric "+d);
-				}
-				predictions2.show();
-				System.out.println(mce.evaluate(predictions2));
+
+
+				predictions.show();
+
 
 				Transformer[] _stages = pipelineModel.stages();
 
@@ -585,15 +598,15 @@ public class ApiController {
 
 
 				IndexToString trs = new IndexToString().setLabels(temp.labels()).setInputCol("prediction").setOutputCol("prediction-original");
-				predictions2 = trs.transform(predictions2);
+				predictions = trs.transform(predictions);
 
 
-				MulticlassMetrics metrics = new MulticlassMetrics(predictions2.select("label", "prediction"));
+				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select("label", "prediction"));
 
 				System.out.println(metrics.accuracy());
 				System.out.println(metrics.fMeasure());
 
-				Dataset<Row> p_orginal = predictions2.select("prediction-original").limit(limit);
+				Dataset<Row> p_orginal = predictions.select("prediction-original").limit(limit);
 				double acc = metrics.accuracy();
 				double fMeasure = metrics.fMeasure();
 				double precision = metrics.precision();
@@ -608,6 +621,7 @@ public class ApiController {
 				temp_res.put("fMeasure", df2.format(fMeasure));
 				temp_res.put("precision", df2.format(precision));
 				temp_res.put("recall", df2.format(recall));
+				temp_res.put("best_params", best_params);
 
 				res.put(model.get("model"), temp_res);
 			}
@@ -661,8 +675,46 @@ public class ApiController {
 			//
 			//			}
 			if (model.get("model").equals("decision_tree")){
-				dtModel = new DecisionTreeClassifier().fit(training);
-				Dataset<Row> predictions = dtModel.transform(testing);
+
+
+				Dataset<Row> predictions = null;
+
+				String best_params = "";
+
+				if (model.get("hyper_params")!=null) {
+
+					Map<String, String> hyperParams = (Map<String, String>) model.get("hyper_params");
+
+					DT dtPojo = new DT();
+					dtPojo.setMaxBins(hyperParams.get("maxBins"));
+					dtPojo.setMaxDepth(hyperParams.get("maxDepth"));
+					dtPojo.setMinInfoGain(hyperParams.get("minInfoGain"));
+					dtPojo.setMinInstancesperNode(hyperParams.get("minInstancesperNode"));
+
+					System.out.println("DT POJO -> "+dtPojo);
+					MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
+					DecisionTreeClassifier dt = new DecisionTreeClassifier();
+					ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(dt.maxBins(), dtPojo.getMaxBins()).addGrid(dt.maxDepth(), dtPojo.getMaxDepth()).addGrid(dt.minInfoGain(), dtPojo.getMinInfoGain()).addGrid(dt.minInstancesPerNode(), dtPojo.getMinInstancesperNode());
+					ParamMap[] pMap = paramGrid.build();
+					CrossValidator cv = new CrossValidator().setNumFolds(Integer.valueOf(String.valueOf(model.get("kfold")))).setEstimator(dt).setEstimatorParamMaps(pMap).setEvaluator(mce);
+					CrossValidatorModel cvm = cv.fit(training);
+					//System.out.println("explains param "+cvm.explainParams());
+					System.out.println("best model params "+cvm.bestModel().explainParams());
+					best_params = cvm.bestModel().explainParams();
+					predictions = cvm.transform(testing);
+					for(double d : cvm.avgMetrics()) {
+						System.out.println("mteric "+d);
+					}
+					System.out.println(mce.evaluate(predictions));
+				}
+				else {
+					dtModel = new DecisionTreeClassifier().fit(training);
+					predictions = dtModel.transform(testing);
+				}
+
+
+
+				
 				predictions.show();
 
 				Transformer[] _stages = pipelineModel.stages();
@@ -697,14 +749,46 @@ public class ApiController {
 				temp_res.put("fMeasure", df2.format(fMeasure));
 				temp_res.put("precision", df2.format(precision));
 				temp_res.put("recall", df2.format(recall));
+				temp_res.put("best_params", best_params);
 
 				res.put(model.get("model"), temp_res);
 
 
 			}
 			if (model.get("model").equals("naive_bayes")){
-				nbModel = new NaiveBayes().fit(training);
-				Dataset<Row> predictions = nbModel.transform(testing);
+				
+				Dataset<Row> predictions = null;
+
+				String best_params = "";
+
+				if (model.get("hyper_params")!=null) {
+
+					Map<String, String> hyperParams = (Map<String, String>) model.get("hyper_params");
+
+					NB nbPojo = new NB();
+					nbPojo.setSmoothing(hyperParams.get("smoothing"));
+
+					System.out.println("NB POJO -> "+nbPojo);
+					MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
+					NaiveBayes nb = new NaiveBayes();
+					ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(nb.smoothing(),nbPojo.getSmoothing());
+					ParamMap[] pMap = paramGrid.build();
+					CrossValidator cv = new CrossValidator().setNumFolds(Integer.valueOf(String.valueOf(model.get("kfold")))).setEstimator(nb).setEstimatorParamMaps(pMap).setEvaluator(mce);
+					CrossValidatorModel cvm = cv.fit(training);
+					//System.out.println("explains param "+cvm.explainParams());
+					System.out.println("best model params "+cvm.bestModel().explainParams());
+					best_params = cvm.bestModel().explainParams();
+					predictions = cvm.transform(testing);
+					for(double d : cvm.avgMetrics()) {
+						System.out.println("mteric "+d);
+					}
+					System.out.println(mce.evaluate(predictions));
+				}
+				else {
+					nbModel = new NaiveBayes().fit(training);
+					predictions = nbModel.transform(testing);
+				}
+				
 				predictions.show();
 
 				Transformer[] _stages = pipelineModel.stages();
@@ -739,6 +823,7 @@ public class ApiController {
 				temp_res.put("fMeasure", df2.format(fMeasure));
 				temp_res.put("precision", df2.format(precision));
 				temp_res.put("recall", df2.format(recall));
+				temp_res.put("best_params", best_params);
 				res.put(model.get("model"), temp_res);
 
 
@@ -781,6 +866,7 @@ public class ApiController {
 				temp_res.put("fMeasure", df2.format(fMeasure));
 				temp_res.put("precision", df2.format(precision));
 				temp_res.put("recall", df2.format(recall));
+				temp_res.put("best_params", "");
 
 				res.put(model.get("model"), temp_res);
 			}
@@ -821,6 +907,7 @@ public class ApiController {
 				temp_res.put("fMeasure", df2.format(fMeasure));
 				temp_res.put("precision", df2.format(precision));
 				temp_res.put("recall", df2.format(recall));
+				temp_res.put("best_params", "");
 				res.put(model.get("model"), temp_res);
 
 

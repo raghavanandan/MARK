@@ -30,8 +30,8 @@ public class DT{
 	public int[] getMinInstancesperNode() {
 		return minInstancesperNode;
 	}
-	public void setMinInstancesperNode(String minInstancesperNode) {
-		this.minInstancesperNode = Utils.getInt(minInstancesperNode);
+	public void setMinInstancesperNode(String minInstancesPerNode) {
+		this.minInstancesperNode = Utils.getInt(minInstancesPerNode);
 	}
 	
 	

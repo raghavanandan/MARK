@@ -14,26 +14,68 @@
       "tol"
     ],
     "Decision Tree": [
-      "maxBins",
-      "maxDepth",
-      "minInfoGain",
-      "minInstancesperNode"
+      {
+        "name": "maxBins",
+        "defaultValue": 32
+      },
+      {
+        "name": "maxDepth",
+        "defaultValue": 1
+      },
+      {
+        "name": "minInfoGain",
+        "defaultValue": 0.0
+      },
+      {
+        "name": "minInstancesperNode",
+        "defaultValue": 2
+      }
     ],
     "Naive Bayes": [
-      "smoothing"
+      {
+        "name": "smoothing",
+        "defaultValue": 0.000000001
+      }
     ],
     "Random Forest": [
-      "maxBins",
-      "maxDepth",
-      "minInfoGain",
-      "numTrees"
+      {
+        "name": "maxBins",
+        "defaultValue": 32
+      },
+      {
+        "name": "maxDepth",
+        "defaultValue": 1
+      },
+      {
+        "name": "minInfoGain",
+        "defaultValue": 0.0
+      },
+      {
+        "name": "numTrees",
+        "defaultValue": 10
+      }
     ],
     "Gradient Boosted Trees": [
-      "maxBins",
-      "maxDepth",
-      "maxIter",
-      "stepSize",
-      "subSamplingRate"
+      {
+        "name": "maxBins",
+        "defaultValue": 20
+      },
+      {
+        "name": "maxDepth",
+        "defaultValue": 3
+      },
+      {
+        "name": "maxIter",
+        "defaultValue": 100
+      },
+      {
+        "name": "stepSize",
+        "defaultValue": 1
+      },
+      {
+        "name": "subSamplingRate",
+        "defaultValue": 1
+      }
     ]
   }
 }

@@ -25,6 +25,7 @@ class ModelModal extends Component {
             trainData: "",
             dataHeaders: "",
             predictionResults: "",
+            isTuning: false,
         };
 
         this.changeTab = this.changeTab.bind(this);
@@ -64,45 +65,62 @@ class ModelModal extends Component {
         }
     }
 
-    populateParamValues(e, model) {
+    populateParamValues(e, model, type) {
         model = model.toLowerCase().split(" ").join("_");
         // console.log(model + ' ' + e.target.name + ' ' + e.target.value);
         if (!this.state.chosenModels.includes(model)) {
 
             let prev = this.state.paramValues;
-            let flag = false;
 
             if (prev.length) {
                 for (let key in prev) {
                     if (prev[key]['model'] === model) {
+                        if (type === "kfold") {
+                            prev[key]["kfold"] = e.target.value;
+                            break;
+                        }
                         prev[key]['hyper_params'][e.target.name] = e.target.value;
-                        flag = true;
                     }
                 }
             }
 
-            if (!flag) {
-                let obj = {
-                    model: model,
-                    hyper_params: {
-                        [e.target.name]: e.target.value
-                    }
-                };
-                prev.push(obj);
-            }
-
-
-            // console.log(prev);
-
             this.setState({
                 paramValues: prev
-            });
+            }, () => console.log(this.state.paramValues));
 
         }
     }
 
     updateModelParams(option) {
-        this.setState({filterModels: option});
+        let prevModels = [];
+        let models = [];
+        let hyper_params = {};
+        let paramValues = [];
+        for (let key in this.state.paramValues) {
+            prevModels.push(this.state.paramValues[key]['model'])
+        }
+        for (let key in option) {
+            if (!prevModels.includes(option[key].value)) {
+                models.push(option[key].value);
+            }
+        }
+
+        for (let key in models) {
+            let model = models[key];
+            let params = PARAMS['hyper_params'][model];
+            for (let index in params) {
+                hyper_params[params[index].name] = params[index].defaultValue
+            }
+            paramValues.push({
+                "model": model.toLowerCase().split(" ").join("_"),
+                "hyper_params": hyper_params,
+                "kfold": 1
+            })
+        }
+
+        // console.log(paramValues);
+
+        this.setState({filterModels: option, paramValues: paramValues}, () => console.log(this.state.paramValues));
     }
 
     updateFeatureColumns(option) {
@@ -175,39 +193,29 @@ class ModelModal extends Component {
     }
 
     predictModel() {
-        API.predictModel({outputCol: this.state.targetColumn.value, data: this.state.paramValues}).then((data) => {
-            if (data !== 400) {
-                // let arr = [];
-                let keys = Object.keys(data);
-                // for (let i=0; i < keys.length; ++i) {
-                //     arr.push({[keys[i]]: data[keys[i]]})
-                // }
-                // let newTestData = {};
-                let arr = [];
-                let obj = this.state.testData;
-                let headers = this.state.dataHeaders;
-                for (let key in obj) {
-                    console.log(obj[key]);
-                    for (let index in keys) {
-                        // console.log(keys[index]);
-                        let new_key = this.state.targetColumn.value + '_' + keys[index];
-                        if (!arr.includes(new_key)) {
-                            arr.push(new_key);
-                            headers.push({header: new_key});
-                        }
-                        // console.log(new_key);
-                        // console.log(data[keys[index]]['prediction']['docs'][key])
-                        obj[key][new_key] = data[keys[index]]['prediction']['docs'][key];
-                    }
-                }
-                console.log(obj);
-                this.setState({predictionResults: data, testData: obj, dataHeaders: headers, runModel: false, showResults: true}, () => {
-                    console.log(this.state.testData, this.state.dataHeaders);
-                });
-            }
-        }).catch((err) => {
-            console.log(err);
-        })
+        console.log(this.state.paramValues);
+        // API.predictModel({outputCol: this.state.targetColumn.value, data: this.state.paramValues}).then((data) => {
+        //     if (data !== 400) {
+        //         let keys = Object.keys(data);
+        //         let arr = [];
+        //         let obj = this.state.testData;
+        //         let headers = this.state.dataHeaders;
+        //         for (let key in obj) {
+        //             for (let index in keys) {
+        //                 let new_key = this.state.targetColumn.value + '_' + keys[index];
+        //                 if (!arr.includes(new_key)) {
+        //                     arr.push(new_key);
+        //                     headers.push({header: new_key});
+        //                 }
+        //
+        //                 obj[key][new_key] = data[keys[index]]['prediction']['docs'][key];
+        //             }
+        //         }
+        //         this.setState({predictionResults: data, testData: obj, dataHeaders: headers, runModel: false, showResults: true});
+        //     }
+        // }).catch((err) => {
+        //     console.log(err);
+        // })
     }
 
     showPrepModel() {
@@ -287,19 +295,37 @@ class ModelModal extends Component {
                     <div className={"form-group model-form col-md-6"}>
                         <h3>Hyper Parameters</h3>
                         <hr className={"stat-separator"}/>
+                        <label className={"enable-tuning"}>
+                            <input type={"checkbox"} onChange={() => this.setState({isTuning: !this.state.isTuning})} /> &nbsp;&nbsp;
+                            Enable Parameter Tuning
+                        </label>
                         {this.state.filterModels.map((value, index) => (
                             <div key={index}>
                                 <h3 className={"less-margin text-center"} >{value.value}</h3>
+                                <div className={"form-group col-md-12"}>
+                                    <label className={"col-md-6"}>K-fold</label>
+                                    <div className={"col-md-6"}>
+                                        <input
+                                            type={"text"}
+                                            name={"kfold"}
+                                            className={"form-control input-sm"}
+                                            placeholder={"Enter the k-fold value"}
+                                            disabled={!this.state.isTuning}
+                                            onChange={(e) => this.populateParamValues(e, value.value, "kfold")}
+                                        />
+                                    </div>
+                                </div>
                                 {PARAMS.hyper_params[value.value].map((param, index) => (
                                     <div className={"form-group col-md-12"} key={index}>
-                                        <label className={"col-md-6"}>{param}</label>
+                                        <label className={"col-md-6"}>{param.name}</label>
                                         <div className={"col-md-6"}>
                                             <input
                                                 type={"text"}
-                                                name={param}
+                                                name={param.name}
                                                 className={"form-control input-sm"}
                                                 placeholder={"Enter comma separated values"}
-                                                onChange={(e) => this.populateParamValues(e, value.value)}
+                                                onChange={(e) => this.populateParamValues(e, value.value, null)}
+                                                disabled={!this.state.isTuning}
                                             />
                                         </div>
                                     </div>
@@ -373,27 +399,6 @@ class ModelModal extends Component {
                     <h3>Prediction Results</h3>
                     {this.state.dataHeaders && this.state.testData && this.state.trainData && this.state.predictionResults ?
                         <div className={"scrollable-table-div"}>
-                            {/*<table className={"table table-striped"}>*/}
-                                {/*<thead>*/}
-                                    {/*<tr>*/}
-                                        {/*<td></td>*/}
-                                        {/*{this.state.filterModels.map((model, index) => (*/}
-                                            {/*<th scope={"col"} key={index}>{model.value}</th>*/}
-                                        {/*))}*/}
-                                    {/*</tr>*/}
-                                {/*</thead>*/}
-                                {/*<tbody>*/}
-                                    {/*<tr>*/}
-                                        {/*<th scope={"row"}>fMeasure</th>*/}
-                                        {/*{this.state.filterModels.map((model, index) => (*/}
-                                           {/*// this.state.predictionResults[].map((value, index) => (*/}
-                                           {/*//     <td key={index}>{model.value}</td>*/}
-                                           {/*// ))*/}
-                                            {/*<td key={index}>{this.state.predictionResults[model.value]['fMeasure']}</td>*/}
-                                        {/*))}*/}
-                                    {/*</tr>*/}
-                                {/*</tbody>*/}
-                            {/*</table>*/}
                             {this.state.filterModels.map((model, index) => (
                                 <div key={index}>
                                     <h3 className={"less-margin text-center"} >{model.value}</h3>

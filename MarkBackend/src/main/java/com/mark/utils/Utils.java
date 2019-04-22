@@ -42,7 +42,7 @@ public class Utils {
 			;
 		}
 
-		return s.strip();
+		return s.trim();
 	}
 
 	public static List<String> convertFrameToJson(List<Row> rows) {

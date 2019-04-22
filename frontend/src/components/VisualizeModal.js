@@ -18,7 +18,9 @@ class VisualizeModal extends Component {
             chosenColumn: '',
             optionFilter: null,
             singleStats: '',
-            multiStats : ''
+            multiStats : '',
+            expandStat: false,
+            expandVis: false
         };
 
         this.showDetails = this.showDetails.bind(this);
@@ -91,7 +93,8 @@ class VisualizeModal extends Component {
                         ]
                     };
                     this.setState({
-                        chartData: temp
+                        chartData: temp,
+                        expandVis: true
                     });
                 }
             }
@@ -105,7 +108,7 @@ class VisualizeModal extends Component {
                for(let key in data.docs) {
                    obj[data.docs[key]['summary']] = data.docs[key][column]
                }
-               this.setState({singleStats: obj, multiStats: ''});
+               this.setState({singleStats: obj, multiStats: '', expandStat: true});
            }
         }).catch((err) => {
             console.log(err);
@@ -197,17 +200,19 @@ class VisualizeModal extends Component {
                             Visualize Dataset
                         </Modal.Title>
                     </Modal.Header>
-                    <Modal.Body className={"col-md-12 lg-modal-content"}>
-                        <div className={"col-md-2 filter-option-div"}>
-                            <div className={(this.state.isMaster ? "active-link" : null)}
-                                 onClick={() => this.setState({isMaster: true})}>Load Master Dataframe
+                    <Modal.Body className={"col-md-12 vis-modal-body"}>
+                        <div className={"modal-tabs col-md-12"}>
+                            <div className={(this.state.isMaster ? "tab-active" : "") + " tab-div col-md-2 text-center"}
+                                 onClick={() => this.setState({isMaster: true})}>
+                                <span>Master Dataframe</span>
                             </div>
-                            <div className={(!this.state.isMaster ? "active-link" : null)}
-                                 onClick={() => this.setState({isMaster: false})}>Load Filtered Dataframe
+                            <div className={(!this.state.isMaster ? "tab-active" : "") + " tab-div col-md-2 text-center"}
+                                 onClick={() => this.setState({isMaster: false})}>
+                                <span>Filtered Dataframe</span>
                             </div>
                         </div>
                         {this.state.isMaster ?
-                            <div className={"col-md-5 data-table-div"}>
+                            <div className={"col-md-6 data-table-div medium-top-pad"}>
                                 {options.length && this.state.chosenColumn ?
                                     <>
                                         <div><b>Compare with:</b></div>
@@ -241,7 +246,7 @@ class VisualizeModal extends Component {
                                     </tbody>
                                 </table>
                             </div> :
-                            <div className={"col-md-5 data-table-div"}>
+                            <div className={"col-md-6 data-table-div medium-top-pad"}>
                                 <table className={"table data-table"}>
                                     <thead>
                                     <tr>
@@ -263,11 +268,15 @@ class VisualizeModal extends Component {
                                 </table>
                             </div>
                         }
-                        <div className={"data-table-div col-md-5"}>
-                            <h3>Statistics</h3>
+                        <div className={"data-table-div col-md-6 medium-top-pad"}>
+                            <div className={"header-dropdown"} onClick={() => this.setState({expandStat: !this.state.expandStat})}>
+                                <span><i className={"fas " + (this.state.expandStat ? "fa-angle-down" : "fa-angle-right")}/></span>&nbsp;&nbsp;&nbsp;
+                                <span className={"h3-header"}>Statistics</span>
+                            </div>
                             <hr className={"stat-separator"}/>
-                            {this.state.singleStats && !this.state.multiStats ?
-                                <div className={"no-pad bottom-pad col-md-12"}>
+                            {this.state.expandStat ?
+                                (this.state.singleStats && !this.state.multiStats ?
+                                        <div className={"no-pad bottom-pad col-md-12"}>
                                     <span className={"col-md-6 text-left"}>
                                         <b>Count:</b>
                                     </span>
@@ -283,86 +292,98 @@ class VisualizeModal extends Component {
                                     <span className={"col-md-6 text-left"}>
                                         <b>Standard Deviation:</b>
                                     </span>
-                                    <span className={"col-md-6 text-left"}>
+                                            <span className={"col-md-6 text-left"}>
                                         {this.state.singleStats.stddev}
                                     </span>
-                                    <span className={"col-md-6 text-left"}>
+                                            <span className={"col-md-6 text-left"}>
                                         <b>Min:</b>
                                     </span>
-                                    <span className={"col-md-6 text-left"}>
+                                            <span className={"col-md-6 text-left"}>
                                         {this.state.singleStats.min}
                                     </span>
-                                    <span className={"col-md-6 text-left"}>
+                                            <span className={"col-md-6 text-left"}>
                                         <b>Max:</b>
                                     </span>
-                                    <span className={"col-md-6 text-left"}>
+                                            <span className={"col-md-6 text-left"}>
                                         {this.state.singleStats.max}
                                     </span>
-                                </div> : null
+                                        </div> :
+                                        <div className={"no-pad text-center"}>
+                                            <p className={"no-file"}>No data</p>
+                                        </div>
+                                ) : null
                             }
-                            {this.state.multiStats && !this.state.singleStats ?
-                                <div className={"no-pad bottom-pad col-md-12"}>
+                            {this.state.expandStat ?
+                                (this.state.multiStats && !this.state.singleStats ?
+                                        <div className={"no-pad bottom-pad col-md-12"}>
                                     <span className={"col-md-3 col-md-offset-6 text-left"}>
                                         <b>{this.state.multiStats.column1}</b>
                                     </span>
-                                    <span className={"col-md-3 text-left"}>
+                                            <span className={"col-md-3 text-left"}>
                                         <b>{this.state.multiStats.column2}</b>
                                     </span>
-                                    <span className={"col-md-6 text-left"}>
+                                            <span className={"col-md-6 text-left"}>
                                         <b>Count:</b>
                                     </span>
-                                    <span className={"col-md-3 text-left"}>
+                                            <span className={"col-md-3 text-left"}>
                                         {this.state.multiStats.count[0]}
                                     </span>
-                                    <span className={"col-md-3 text-left"}>
+                                            <span className={"col-md-3 text-left"}>
                                         {this.state.multiStats.count[1]}
                                     </span>
-                                    <span className={"col-md-6 text-left"}>
+                                            <span className={"col-md-6 text-left"}>
                                         <b>Mean:</b>
                                     </span>
-                                    <span className={"col-md-3 text-left"}>
+                                            <span className={"col-md-3 text-left"}>
                                         {this.state.multiStats.mean[0]}
                                     </span>
-                                    <span className={"col-md-3 text-left"}>
+                                            <span className={"col-md-3 text-left"}>
                                         {this.state.multiStats.mean[1]}
                                     </span>
-                                    <span className={"col-md-6 text-left"}>
+                                            <span className={"col-md-6 text-left"}>
                                         <b>Standard Deviation:</b>
                                     </span>
-                                    <span className={"col-md-3 text-left"}>
+                                            <span className={"col-md-3 text-left"}>
                                         {this.state.multiStats.stddev[0]}
                                     </span>
-                                    <span className={"col-md-3 text-left"}>
+                                            <span className={"col-md-3 text-left"}>
                                         {this.state.multiStats.stddev[1]}
                                     </span>
-                                    <span className={"col-md-6 text-left"}>
+                                            <span className={"col-md-6 text-left"}>
                                         <b>Min:</b>
                                     </span>
-                                    <span className={"col-md-3 text-left"}>
+                                            <span className={"col-md-3 text-left"}>
                                         {this.state.multiStats.min[0]}
                                     </span>
-                                    <span className={"col-md-3 text-left"}>
+                                            <span className={"col-md-3 text-left"}>
                                         {this.state.multiStats.min[1]}
                                     </span>
-                                    <span className={"col-md-6 text-left"}>
+                                            <span className={"col-md-6 text-left"}>
                                         <b>Max:</b>
                                     </span>
-                                    <span className={"col-md-3 text-left"}>
+                                            <span className={"col-md-3 text-left"}>
                                         {this.state.multiStats.max[0]}
                                     </span>
-                                    <span className={"col-md-3 text-left"}>
+                                            <span className={"col-md-3 text-left"}>
                                         {this.state.multiStats.max[1]}
                                     </span>
-
-                                </div> : null
+                                        </div> :
+                                        null
+                                ) : null
                             }
-                            <h3>Visualizations</h3>
+                            <div className={"header-dropdown"} onClick={() => this.setState({expandVis: !this.state.expandVis})}>
+                                <span><i className={"fas " + (this.state.expandVis ? "fa-angle-down" : "fa-angle-right")}/></span>&nbsp;&nbsp;&nbsp;
+                                <span className={"h3-header"}>Visualizations</span>
+                            </div>
                             <hr className={"stat-separator"}/>
-                            {this.state.chartData.labels && !this.state.scatterData.labels ?
-                                <Chart chartData={this.state.chartData}/> : null
-                            }
-                            {this.state.scatterData.labels ?
-                                <ScatterPlot chartData={this.state.scatterData} /> : null
+                            {this.state.expandVis ?
+                                <>
+                                    {this.state.chartData.labels && !this.state.scatterData.labels ?
+                                        <Chart chartData={this.state.chartData}/> : null}
+                                    {this.state.scatterData.labels ?
+                                        <ScatterPlot chartData={this.state.scatterData}/> : null}
+                                </>
+                                : null
                             }
                         </div>
                     </Modal.Body>

@@ -24,9 +24,10 @@ class SideNavbar extends Component{
     render() {
         return (
             <div className={'side-navbar'}>
-                <li className={"side-navlinks " + (this.state.section === 'home' ? 'active' : '')} onClick={() => this.handleSectionChange('home')}>Home</li>
+                <li className={"side-navlinks " + (this.state.section === 'home' ? 'active' : '')} onClick={() => this.handleSectionChange('home')}>
+                    Home
+                </li>
                 <li className={"side-navlinks " + (this.state.section === 'experiments' ? 'active' : '')} onClick={() => this.handleSectionChange('experiments')}>Experiments</li>
-                {/*<li className={"side-navlinks " + (this.state.section === 'file-structure' ? 'active' : '') } onClick={() => this.handleSectionChange('file-structure')}>File Structure</li>*/}
                 <li className={"side-navlinks " + (this.state.section === 'datasets' ? 'active' : '')} onClick={() => this.handleSectionChange('datasets')}>Datasets</li>
             </div>
         );

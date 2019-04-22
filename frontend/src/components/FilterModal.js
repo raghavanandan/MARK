@@ -10,11 +10,13 @@ class FilterModal extends Component{
             filterColumns: null,
             columns: [],
             isQuery: false,
-            query: ""
+            query: "",
+            viewName: ""
         };
 
         this.handleChange = this.handleChange.bind(this);
         this.submitFilter = this.submitFilter.bind(this);
+        this.createView = this.createView.bind(this);
     }
 
 
@@ -25,6 +27,16 @@ class FilterModal extends Component{
 
     handleChange(option) {
         this.setState({filterColumns: option});
+    }
+
+    createView() {
+        API.createView(this.state.viewName).then((data) => {
+            if (data !== 400) {
+                console.log(data);
+            }
+        }).catch((err) => {
+            console.log(err);
+        })
     }
 
     submitFilter() {
@@ -46,7 +58,15 @@ class FilterModal extends Component{
                 })
             }
         } else {
-            console.log(this.state.query);
+            API.queryDF(this.state.query).then((data) => {
+                if (data !== 400) {
+                    // console.log(data);
+                    this.props.filters(data);
+                    this.props.onHide();
+                }
+            }).catch((err) => {
+                console.log(err);
+            })
         }
     }
 
@@ -71,17 +91,29 @@ class FilterModal extends Component{
                         Apply Filters
                     </Modal.Title>
                 </Modal.Header>
-                <Modal.Body className={"col-md-12"}>
-                    <div className={"col-md-2 filter-option-div"}>
-                        <div className={(!this.state.isQuery ? "active-link" : null)} onClick={() => this.setState({isQuery: false})}>Filter by Columns</div>
-                        <div className={(this.state.isQuery ? "active-link" : null)} onClick={() => this.setState({isQuery: true})}>Filter by Query</div>
+                <Modal.Body className={"col-md-12 filter-modal-body"}>
+                    <div className={"modal-tabs col-md-12"}>
+                        <div className={(!this.state.isQuery ? "tab-active" : "") + " tab-div col-md-2 text-center"}
+                             onClick={() => this.setState({isQuery: false})}>
+                            <span>Filter by Columns</span>
+                        </div>
+                        <div className={(this.state.isQuery ? "tab-active" : "") + " tab-div col-md-2 text-center"}
+                             onClick={() => this.setState({isQuery: true})}>
+                            <span>Filter by Query</span>
+                        </div>
                     </div>
                     {this.state.isQuery ?
-                        <div className={"col-md-10"}>
+                        <div className={"col-md-12 top-pad"}>
+                            <span className={"col-md-3 right-pad"}>
+                                <input className={"input-sm form-control"} type={"text"} onChange={(e) => this.setState({viewName: e.target.value})} />
+                            </span>
+                            <span>
+                                <button className={"action-small-btn"} type={"button"} onClick={this.createView}>Create View</button>
+                            </span>
                             <h4>Enter the SQL query for filtering:</h4>
                             <FormControl as={"textarea"} rows={"5"} autoFocus onChange={(e) => this.setState({query: e.target.value})} />
                         </div> :
-                        <div className={"col-md-10"}>
+                        <div className={"col-md-12 top-pad"}>
                             <h4>Choose the columns:</h4>
                             <Select
                                 className={"filter-select"}

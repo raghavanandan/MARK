@@ -52,8 +52,7 @@ public class ApplicationConfig {
     public SparkConf sparkConf() {
         SparkConf sparkConf = new SparkConf()
                 .setAppName(appName)
-                .setMaster(masterUri)
-                .set("spark.scheduler.mode", "FAIR");
+                .setMaster(masterUri);
         
         return sparkConf;
     }
@@ -66,13 +65,18 @@ public class ApplicationConfig {
 
     @Bean
     public SparkSession sparkSession() {
-        return SparkSession
+        SparkSession spark = SparkSession
                 .builder()
                 .sparkContext(javaSparkContext().sc())
                 .appName("Java Spark SQL basic example")
                 .getOrCreate();
+        spark.sparkContext().setLogLevel("ERROR");
+        return spark;
     }
 
+  
+
+    
     @Bean
     public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
         return new PropertySourcesPlaceholderConfigurer();

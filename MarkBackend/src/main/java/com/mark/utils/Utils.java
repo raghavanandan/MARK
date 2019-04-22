@@ -42,7 +42,7 @@ public class Utils {
 			;
 		}
 
-		return s;
+		return s.strip();
 	}
 
 	public static List<String> convertFrameToJson(List<Row> rows) {
@@ -162,6 +162,40 @@ public class Utils {
 			nums[i] = Integer.parseInt(values[i]);
 		}
 		return nums;
+	}
+
+
+	public static JSONObject convertFrameToJsonSummary(List<Row> rows) {
+		String[] fields = rows.get(0).schema().fieldNames();
+		//List<String> l = new ArrayList<>();
+
+		JSONObject master = new JSONObject();
+
+		JSONArray arr = new JSONArray();
+
+		for (Row r : rows) {
+			JSONObject obj = new JSONObject();
+			for (int i=0; i<fields.length;i++) {
+
+				if (obj.get("summary")!=null && (obj.get("summary").equals("stddev") || obj.get("summary").equals("mean"))) {
+					try {
+						obj.put(fields[i], String.format("%.2f",Double.valueOf((String) r.get(i))));
+					}
+					catch(Exception e) {
+						obj.put(fields[i], r.get(i));
+					}
+				}
+				else {
+
+					obj.put(fields[i], r.get(i));
+				}
+			}
+			arr.add(obj);
+		}
+
+		master.put("docs", arr);
+
+		return master;
 	}
 
 

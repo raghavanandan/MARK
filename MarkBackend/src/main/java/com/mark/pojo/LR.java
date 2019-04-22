@@ -1,8 +1,11 @@
 package com.mark.pojo;
 
+import java.util.Arrays;
+
 import com.mark.utils.Utils;
 
 public class LR{
+	
 	
 	private  double[] elasticNetParam;
 	private int[] maxIter;
@@ -32,6 +35,12 @@ public class LR{
 	}
 	public void setTol(String tol) {
 		this.tol = Utils.getDouble(tol);
+	}
+	
+	@Override
+	public String toString() {
+		return "LR [elasticNetParam=" + Arrays.toString(elasticNetParam) + ", maxIter=" + Arrays.toString(maxIter)
+				+ ", regParam=" + Arrays.toString(regParam) + ", tol=" + Arrays.toString(tol) + "]";
 	}
 	
 	

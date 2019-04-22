@@ -2,6 +2,7 @@ package com.mark.controller;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,8 @@ import org.apache.spark.ml.PipelineStage;
 import org.apache.spark.ml.Transformer;
 import org.apache.spark.ml.classification.DecisionTreeClassificationModel;
 import org.apache.spark.ml.classification.DecisionTreeClassifier;
+import org.apache.spark.ml.classification.GBTClassificationModel;
+import org.apache.spark.ml.classification.GBTClassifier;
 import org.apache.spark.ml.classification.LogisticRegression;
 import org.apache.spark.ml.classification.LogisticRegressionModel;
 import org.apache.spark.ml.classification.NaiveBayes;
@@ -20,8 +23,6 @@ import org.apache.spark.ml.classification.NaiveBayesModel;
 import org.apache.spark.ml.classification.RandomForestClassificationModel;
 import org.apache.spark.ml.classification.RandomForestClassifier;
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator;
-import org.apache.spark.ml.classification.GBTClassificationModel;
-import org.apache.spark.ml.classification.GBTClassifier;
 import org.apache.spark.ml.feature.IndexToString;
 import org.apache.spark.ml.feature.OneHotEncoder;
 import org.apache.spark.ml.feature.StringIndexer;
@@ -50,6 +51,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.mark.pojo.LR;
 import com.mark.pojo.ModelSelection;
 import com.mark.pojo.Response;
 import com.mark.pojo.StringParser;
@@ -90,7 +92,11 @@ public class ApiController {
 	private static Dataset<Row> training;
 
 	private static Dataset<Row> testing;
-
+	
+	private static DecimalFormat df2 = new DecimalFormat("#.##");
+	
+	private static final int limit = 50;
+	
 	@RequestMapping("wordcount")
 	public ResponseEntity<List<Count>> words() {
 		return new ResponseEntity<>(wordCount.count(), HttpStatus.OK);
@@ -121,7 +127,7 @@ public class ApiController {
 
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
-	
+
 	@RequestMapping("get-docs")
 	public ResponseEntity<JSONArray> getDocs() {
 
@@ -176,7 +182,7 @@ public class ApiController {
 		}
 
 
-		List<Row> x = frameDf.collectAsList();
+		List<Row> x = frameDf.limit(limit).collectAsList();
 		JSONObject js = Utils.convertFrameToJson2(x);
 		//		System.out.println(js);
 
@@ -215,18 +221,18 @@ public class ApiController {
 		}
 		System.out.println("appid 1->"+sc.sc().applicationId());
 		masterDf = sparkSession.read().json("/tmp/file1.txt");
-//		masterDf.show();
+		//		masterDf.show();
 		System.out.println("added masterdf fetch");
 		System.out.println("appid 1->"+sc.sc().applicationId());
 
-		List<Row> x = masterDf.collectAsList();
+		List<Row> x = masterDf.limit(limit).collectAsList();
 		JSONObject js = Utils.convertFrameToJson2(x);
 		//		System.out.println(js);
 		System.out.println("added frameconvert fetch");
 		Tuple2<String, String>[] dtypes = masterDf.dtypes();
 
 		JSONArray header = Utils.getTypes(dtypes);
-		
+
 		js.put("header", header);
 
 		return new ResponseEntity<>(js, HttpStatus.OK);
@@ -270,7 +276,7 @@ public class ApiController {
 		currentDf = currentDf.selectExpr(p);
 
 
-		List<Row> x = currentDf.collectAsList();
+		List<Row> x = currentDf.limit(limit).collectAsList();
 		JSONObject js = Utils.convertFrameToJson2(x);
 
 
@@ -293,7 +299,7 @@ public class ApiController {
 		}
 
 		currentDf = sparkSession.sql(parser.getRawQuery());
-		List<Row> x = currentDf.collectAsList();
+		List<Row> x = currentDf.limit(limit).collectAsList();
 		JSONObject js = Utils.convertFrameToJson2(x);
 		//		System.out.println(js);
 
@@ -360,6 +366,8 @@ public class ApiController {
 		cols = columns.toArray(cols);
 
 		Dataset<Row> stats = currentDf.describe();
+		
+		stats.show();
 
 		Dataset<Row> col1 = stats.select(stats.col("summary"), stats.col(columns.get(0)));
 
@@ -368,7 +376,7 @@ public class ApiController {
 			col1 = stats.select(stats.col("summary"), stats.col(columns.get(0)),stats.col(columns.get(1)));
 		}
 
-		JSONObject js = Utils.convertFrameToJson2(col1.collectAsList());
+		JSONObject js = Utils.convertFrameToJsonSummary(col1.collectAsList());
 
 		Tuple2<String, String>[] dtypes = col1.dtypes();
 
@@ -458,20 +466,20 @@ public class ApiController {
 		testing = ds[1];
 
 		preppedDataDF.show();
-		
-		
-		List<Row> training_json = training.collectAsList();
+
+
+		List<Row> training_json = training.limit(limit).collectAsList();
 		JSONObject training_set = Utils.convertFrameToJson2Cols(training_json, currentDf.columns());
-		List<Row> testing_json = testing.collectAsList();
+		List<Row> testing_json = testing.limit(limit).collectAsList();
 		JSONObject testing_set = Utils.convertFrameToJson2Cols(testing_json, currentDf.columns());
-		
+
 		JSONObject res = new JSONObject();
-		
+
 		res.put("training_set", training_set);
 		res.put("testing_set", testing_set);
-		
+
 		Tuple2<String, String>[] dtypes = currentDf.dtypes();
-		
+
 		JSONArray header = Utils.getTypes(dtypes);
 
 		res.put("header", header);
@@ -537,40 +545,55 @@ public class ApiController {
 		JSONObject res = new JSONObject();
 
 		for (Map<String, Object> model :  it) {
-			
-			
-			
+
+
+
 			if (model.get("model").equals("logistic_regression")){
+
+
+				if (model.get("hyper_params")!=null) {
+
+					Map<String, String> hyperParams = (Map<String, String>) model.get("hyper_params");
+
+					LR lrPojo = new LR();
+					lrPojo.setElasticNetParam(hyperParams.get("elasticNetParam"));
+					lrPojo.setMaxIter(hyperParams.get("maxIter"));
+					lrPojo.setRegParam(hyperParams.get("regParam"));
+					lrPojo.setTol(hyperParams.get("tol"));
+					
+					System.out.println("LR POJO -> "+lrPojo);
+				}
+
 				MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
-		     	LogisticRegression lr = new LogisticRegression();
-		     	ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(lr.elasticNetParam(), new double[] {0.0, 0.5, 1.0}).addGrid(lr.regParam(), new double[] {0.01, 0.5, 2.0}).addGrid(lr.maxIter(), new int[] {1, 5, 10});
-		     	ParamMap[] pMap = paramGrid.build();
-		     	CrossValidator cv = new CrossValidator().setNumFolds(5).setEstimator(lr).setEstimatorParamMaps(pMap).setEvaluator(mce);
-		     	CrossValidatorModel cvm = cv.fit(training);
-		     	//System.out.println("explains param "+cvm.explainParams());
-		     	System.out.println("best model params "+cvm.bestModel().explainParams());
-		     	Dataset<Row> predictions2 = cvm.transform(testing);
-		     	for(double d : cvm.avgMetrics()) {
-		     		System.out.println("mteric "+d);
-		     	}
-		     	predictions2.show();
-		     	System.out.println(mce.evaluate(predictions2));
-		     	
-		     	Transformer[] _stages = pipelineModel.stages();
+				LogisticRegression lr = new LogisticRegression();
+				ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(lr.elasticNetParam(), new double[] {0.0, 0.5, 1.0}).addGrid(lr.regParam(), new double[] {0.01, 0.5, 2.0}).addGrid(lr.maxIter(), new int[] {1, 5, 10});
+				ParamMap[] pMap = paramGrid.build();
+				CrossValidator cv = new CrossValidator().setNumFolds(5).setEstimator(lr).setEstimatorParamMaps(pMap).setEvaluator(mce);
+				CrossValidatorModel cvm = cv.fit(training);
+				//System.out.println("explains param "+cvm.explainParams());
+				System.out.println("best model params "+cvm.bestModel().explainParams());
+				Dataset<Row> predictions2 = cvm.transform(testing);
+				for(double d : cvm.avgMetrics()) {
+					System.out.println("mteric "+d);
+				}
+				predictions2.show();
+				System.out.println(mce.evaluate(predictions2));
+
+				Transformer[] _stages = pipelineModel.stages();
 
 				StringIndexerModel temp = (StringIndexerModel)_stages[0];
 
 
 				IndexToString trs = new IndexToString().setLabels(temp.labels()).setInputCol("prediction").setOutputCol("prediction-original");
 				predictions2 = trs.transform(predictions2);
-				
-				
+
+
 				MulticlassMetrics metrics = new MulticlassMetrics(predictions2.select("label", "prediction"));
 
 				System.out.println(metrics.accuracy());
 				System.out.println(metrics.fMeasure());
 
-				Dataset<Row> p_orginal = predictions2.select("prediction-original");
+				Dataset<Row> p_orginal = predictions2.select("prediction-original").limit(limit);
 				double acc = metrics.accuracy();
 				double fMeasure = metrics.fMeasure();
 				double precision = metrics.precision();
@@ -581,62 +604,62 @@ public class ApiController {
 
 				JSONObject temp_res = new JSONObject();
 				temp_res.put("prediction", p_original_json);
-				temp_res.put("accuracy", acc);
-				temp_res.put("fMeasure", fMeasure);
-				temp_res.put("precision", precision);
-				temp_res.put("recall", recall);
+				temp_res.put("accuracy", df2.format(acc));
+				temp_res.put("fMeasure", df2.format(fMeasure));
+				temp_res.put("precision", df2.format(precision));
+				temp_res.put("recall", df2.format(recall));
 
 				res.put(model.get("model"), temp_res);
 			}
-			
 
-//			if (model.get("model").equals("logistic_regression")){
-//				lrModel = new LogisticRegression().fit(training);
-//				
-//				Dataset<Row> predictions = lrModel.transform(testing);
-//				predictions.show();
-//
-//				Transformer[] _stages = pipelineModel.stages();
-//
-//				StringIndexerModel temp = (StringIndexerModel)_stages[0];
-//
-//
-//				IndexToString trs = new IndexToString().setLabels(temp.labels()).setInputCol("prediction").setOutputCol("prediction-original");
-//				predictions = trs.transform(predictions);
-//
-//
-//				System.out.println("-----<>-----"+model.get("model"));
-//				predictions.show();
-//
-////				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select(outputCol+"Index", "prediction"));
-//				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select("label", "prediction"));
-//
-//				System.out.println(metrics.accuracy());
-//				System.out.println(metrics.fMeasure());
-//				Dataset<Row> p_orginal = predictions.select("prediction-original");
-//				double acc = metrics.accuracy();
-//				double fMeasure = metrics.fMeasure();
-//				double precision = metrics.precision();
-//				double recall = metrics.recall();
-//
-//				JSONObject p_original_json = Utils.convertFrameToJson2Single(p_orginal.collectAsList());
-//
-//				JSONObject temp_res = new JSONObject();
-//				temp_res.put("prediction", p_original_json);
-//				temp_res.put("accuracy", acc);
-//				temp_res.put("fMeasure", fMeasure);
-//				temp_res.put("precision", precision);
-//				temp_res.put("recall", recall);
-//				
-//				System.out.println(metrics.precision());
-//				System.out.println(metrics.recall());
-//
-//				res.put(model.get("model"), temp_res);
-//
-//
-//
-//
-//			}
+
+			//			if (model.get("model").equals("logistic_regression")){
+			//				lrModel = new LogisticRegression().fit(training);
+			//				
+			//				Dataset<Row> predictions = lrModel.transform(testing);
+			//				predictions.show();
+			//
+			//				Transformer[] _stages = pipelineModel.stages();
+			//
+			//				StringIndexerModel temp = (StringIndexerModel)_stages[0];
+			//
+			//
+			//				IndexToString trs = new IndexToString().setLabels(temp.labels()).setInputCol("prediction").setOutputCol("prediction-original");
+			//				predictions = trs.transform(predictions);
+			//
+			//
+			//				System.out.println("-----<>-----"+model.get("model"));
+			//				predictions.show();
+			//
+			////				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select(outputCol+"Index", "prediction"));
+			//				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select("label", "prediction"));
+			//
+			//				System.out.println(metrics.accuracy());
+			//				System.out.println(metrics.fMeasure());
+			//				Dataset<Row> p_orginal = predictions.select("prediction-original");
+			//				double acc = metrics.accuracy();
+			//				double fMeasure = metrics.fMeasure();
+			//				double precision = metrics.precision();
+			//				double recall = metrics.recall();
+			//
+			//				JSONObject p_original_json = Utils.convertFrameToJson2Single(p_orginal.collectAsList());
+			//
+			//				JSONObject temp_res = new JSONObject();
+			//				temp_res.put("prediction", p_original_json);
+			//				temp_res.put("accuracy", acc);
+			//				temp_res.put("fMeasure", fMeasure);
+			//				temp_res.put("precision", precision);
+			//				temp_res.put("recall", recall);
+			//				
+			//				System.out.println(metrics.precision());
+			//				System.out.println(metrics.recall());
+			//
+			//				res.put(model.get("model"), temp_res);
+			//
+			//
+			//
+			//
+			//			}
 			if (model.get("model").equals("decision_tree")){
 				dtModel = new DecisionTreeClassifier().fit(training);
 				Dataset<Row> predictions = dtModel.transform(testing);
@@ -659,7 +682,7 @@ public class ApiController {
 				System.out.println(metrics.accuracy());
 				System.out.println(metrics.fMeasure());
 
-				Dataset<Row> p_orginal = predictions.select("prediction-original");
+				Dataset<Row> p_orginal = predictions.select("prediction-original").limit(limit);
 				double acc = metrics.accuracy();
 				double fMeasure = metrics.fMeasure();
 				double precision = metrics.precision();
@@ -670,10 +693,10 @@ public class ApiController {
 
 				JSONObject temp_res = new JSONObject();
 				temp_res.put("prediction", p_original_json);
-				temp_res.put("accuracy", acc);
-				temp_res.put("fMeasure", fMeasure);
-				temp_res.put("precision", precision);
-				temp_res.put("recall", recall);
+				temp_res.put("accuracy", df2.format(acc));
+				temp_res.put("fMeasure", df2.format(fMeasure));
+				temp_res.put("precision", df2.format(precision));
+				temp_res.put("recall", df2.format(recall));
 
 				res.put(model.get("model"), temp_res);
 
@@ -701,7 +724,7 @@ public class ApiController {
 				System.out.println(metrics.accuracy());
 				System.out.println(metrics.fMeasure());
 
-				Dataset<Row> p_orginal = predictions.select("prediction-original");
+				Dataset<Row> p_orginal = predictions.select("prediction-original").limit(limit);
 				double acc = metrics.accuracy();
 				double fMeasure = metrics.fMeasure();
 				double precision = metrics.precision();
@@ -712,17 +735,16 @@ public class ApiController {
 
 				JSONObject temp_res = new JSONObject();
 				temp_res.put("prediction", p_original_json);
-				temp_res.put("accuracy", acc);
-				temp_res.put("fMeasure", fMeasure);
-				temp_res.put("precision", precision);
-				temp_res.put("recall", recall);
-
+				temp_res.put("accuracy", df2.format(acc));
+				temp_res.put("fMeasure", df2.format(fMeasure));
+				temp_res.put("precision", df2.format(precision));
+				temp_res.put("recall", df2.format(recall));
 				res.put(model.get("model"), temp_res);
 
 
 
 			}
-			
+
 			if (model.get("model").equals("random_forest")){
 				rfModel = new RandomForestClassifier().fit(training);
 				Dataset<Row> predictions = rfModel.transform(testing);
@@ -745,7 +767,7 @@ public class ApiController {
 				System.out.println(metrics.accuracy());
 				System.out.println(metrics.fMeasure());
 
-				Dataset<Row> p_orginal = predictions.select("prediction-original");
+				Dataset<Row> p_orginal = predictions.select("prediction-original").limit(limit);
 				double acc = metrics.accuracy();
 				double fMeasure = metrics.fMeasure();
 				double precision = metrics.precision();
@@ -755,14 +777,14 @@ public class ApiController {
 
 				JSONObject temp_res = new JSONObject();
 				temp_res.put("prediction", p_original_json);
-				temp_res.put("accuracy", acc);
-				temp_res.put("fMeasure", fMeasure);
-				temp_res.put("precision", precision);
-				temp_res.put("recall", recall);
+				temp_res.put("accuracy", df2.format(acc));
+				temp_res.put("fMeasure", df2.format(fMeasure));
+				temp_res.put("precision", df2.format(precision));
+				temp_res.put("recall", df2.format(recall));
 
 				res.put(model.get("model"), temp_res);
 			}
-			
+
 			if (model.get("model").equals("gradient_boosted_trees")){
 				gbtModel = new GBTClassifier().fit(training);
 				Dataset<Row> predictions = gbtModel.transform(testing);
@@ -785,7 +807,7 @@ public class ApiController {
 				System.out.println(metrics.accuracy());
 				System.out.println(metrics.fMeasure());
 
-				Dataset<Row> p_orginal = predictions.select("prediction-original");
+				Dataset<Row> p_orginal = predictions.select("prediction-original").limit(limit);
 				double acc = metrics.accuracy();
 				double fMeasure = metrics.fMeasure();
 				double precision = metrics.precision();
@@ -795,10 +817,10 @@ public class ApiController {
 
 				JSONObject temp_res = new JSONObject();
 				temp_res.put("prediction", p_original_json);
-				temp_res.put("accuracy", acc);
-				temp_res.put("fMeasure", fMeasure);
-				temp_res.put("precision", precision);
-				temp_res.put("recall", recall);
+				temp_res.put("accuracy", df2.format(acc));
+				temp_res.put("fMeasure", df2.format(fMeasure));
+				temp_res.put("precision", df2.format(precision));
+				temp_res.put("recall", df2.format(recall));
 				res.put(model.get("model"), temp_res);
 
 

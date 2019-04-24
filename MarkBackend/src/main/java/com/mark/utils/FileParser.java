@@ -59,6 +59,7 @@ public class FileParser {
 		
 		meta.put("header", header);
 		meta.put("name", name);
+		meta.put("size", Utils.getFileSize(filePath));
 		meta.put("description", description);
 		meta.put("timestamp", Calendar.getInstance().getTimeInMillis());
 		

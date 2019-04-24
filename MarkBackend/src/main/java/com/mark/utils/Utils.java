@@ -1,11 +1,13 @@
 package com.mark.utils;
 
+import java.io.File;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.spark.sql.Row;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -19,7 +21,7 @@ import scala.collection.immutable.Map;
 public class Utils {
 
 
-	public static String getFileName() {
+	public static String getRandomKey() {
 		long now = Instant.now().toEpochMilli();
 		return String.valueOf(now);
 	}
@@ -196,6 +198,18 @@ public class Utils {
 		master.put("docs", arr);
 
 		return master;
+	}
+	
+	
+	public static String getFileSize(String path) {
+		
+		File f = new File(path);
+		String readableSize = FileUtils.byteCountToDisplaySize(f.length());
+		return readableSize;
+		
+		
+		
+		
 	}
 
 

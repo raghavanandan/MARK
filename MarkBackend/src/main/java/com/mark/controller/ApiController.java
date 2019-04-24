@@ -4,8 +4,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.ml.Pipeline;
@@ -51,7 +54,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.google.gson.Gson;
 import com.mark.pojo.DT;
+import com.mark.pojo.FramePojo;
 import com.mark.pojo.LR;
 import com.mark.pojo.ModelSelection;
 import com.mark.pojo.NB;
@@ -98,6 +103,8 @@ public class ApiController {
 	private static DecimalFormat df2 = new DecimalFormat("#.##");
 
 	private static final int limit = 50;
+	
+	private static Map<String, Map<FramePojo,Dataset<Row>>> masterFrames = new HashMap<>();
 
 	@RequestMapping("wordcount")
 	public ResponseEntity<List<Count>> words() {
@@ -199,7 +206,7 @@ public class ApiController {
 
 
 	@RequestMapping("create-master-df")
-	public ResponseEntity<JSONObject> createMasterDataFrame(@RequestParam("docId") String docId) {
+	public ResponseEntity<Response> createMasterDataFrame(@RequestParam("docId") String docId, @RequestParam("name") String name, @RequestParam("description") String description) {
 
 		JSONObject result = mongo.getDoc(docId);
 		System.out.println("mongo fetch");
@@ -226,21 +233,32 @@ public class ApiController {
 		//		masterDf.show();
 		System.out.println("added masterdf fetch");
 		System.out.println("appid 1->"+sc.sc().applicationId());
+		
+		FramePojo framePojo = new FramePojo();
+		framePojo.setCreatedTimestamp(Calendar.getInstance().getTimeInMillis());
+		framePojo.setModifiedTimestamp(Calendar.getInstance().getTimeInMillis());
+		framePojo.setName(name);
+		framePojo.setDescription(description);
+		
+		Map<FramePojo, Dataset<Row>> dataMap = new HashMap<>();
+		dataMap.put(framePojo, masterDf);
+		
+		masterFrames.put(UUID.randomUUID().toString(), dataMap);
 
-		List<Row> x = masterDf.limit(limit).collectAsList();
-		JSONObject js = Utils.convertFrameToJson2(x);
-		//		System.out.println(js);
-		System.out.println("added frameconvert fetch");
-		Tuple2<String, String>[] dtypes = masterDf.dtypes();
+//		List<Row> x = masterDf.limit(limit).collectAsList();
+//		JSONObject js = Utils.convertFrameToJson2(x);
+//		//		System.out.println(js);
+//		System.out.println("added frameconvert fetch");
+//		Tuple2<String, String>[] dtypes = masterDf.dtypes();
+//
+//		JSONArray header = Utils.getTypes(dtypes);
+//
+//		js.put("header", header);
+		Response res = new Response(true, "Frame created", "");
 
-		JSONArray header = Utils.getTypes(dtypes);
-
-		js.put("header", header);
-
-		return new ResponseEntity<>(js, HttpStatus.OK);
+		return new ResponseEntity<>(res, HttpStatus.OK);
 	}
-
-
+	
 	@RequestMapping("create-view")
 	public ResponseEntity<Response> createView(@RequestParam("viewName") String viewName) {
 
@@ -255,7 +273,57 @@ public class ApiController {
 		return new ResponseEntity<>(res, HttpStatus.OK);
 
 	}
+	
+	
 
+
+	@RequestMapping("get-active-frames")
+	public ResponseEntity<JSONArray> getActiveFrames() {
+		
+		JSONArray jsnArray = new JSONArray();
+		
+		for (String key : masterFrames.keySet()) {
+			
+			JSONObject obj = new JSONObject();
+			Map<FramePojo, Dataset<Row>> frameData = masterFrames.get(key);
+			obj.put("frame_id", key);
+			for (FramePojo fPojo : frameData.keySet()) {
+				obj.put("created_timestamp",fPojo.getCreatedTimestamp());
+				obj.put("modified_timestamp", fPojo.getModifiedTimestamp());
+				obj.put("name", fPojo.getName());
+				obj.put("description", fPojo.getDescription());
+			}
+			jsnArray.add(obj);	
+		}
+		
+		return new ResponseEntity<>(jsnArray, HttpStatus.OK);
+
+	}
+	
+	
+	@RequestMapping("get-frame-by-id")
+	public ResponseEntity<JSONObject> getFrameById(@RequestParam("frameId") String frameId) {
+
+		Map<FramePojo, Dataset<Row>> frameData = masterFrames.get(frameId);
+		for (FramePojo fPojo : frameData.keySet()) {
+			Dataset<Row> fdf = frameData.get(fPojo);
+			List<Row> x = fdf.limit(limit).collectAsList();
+			JSONObject js = Utils.convertFrameToJson2(x);
+			//		System.out.println(js);
+			System.out.println("added frameconvert fetch");
+			Tuple2<String, String>[] dtypes = masterDf.dtypes();
+
+			JSONArray header = Utils.getTypes(dtypes);
+
+			js.put("header", header);
+			return new ResponseEntity<>(js, HttpStatus.OK);
+			
+		}
+		return null;
+		
+		
+	}
+		
 
 
 	@RequestMapping("select-df")

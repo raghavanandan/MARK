@@ -103,7 +103,7 @@ public class ApiController {
 	private static DecimalFormat df2 = new DecimalFormat("#.##");
 
 	private static final int limit = 50;
-	
+
 	private static Map<String, Map<FramePojo,Dataset<Row>>> masterFrames = new HashMap<>();
 
 	@RequestMapping("wordcount")
@@ -229,36 +229,36 @@ public class ApiController {
 			e.printStackTrace();
 		}
 		System.out.println("appid 1->"+sc.sc().applicationId());
-		masterDf = sparkSession.read().json("/tmp/file1.txt");
+		Dataset<Row> df = sparkSession.read().json("/tmp/file1.txt");
 		//		masterDf.show();
 		System.out.println("added masterdf fetch");
 		System.out.println("appid 1->"+sc.sc().applicationId());
-		
+
 		FramePojo framePojo = new FramePojo();
 		framePojo.setCreatedTimestamp(Calendar.getInstance().getTimeInMillis());
 		framePojo.setModifiedTimestamp(Calendar.getInstance().getTimeInMillis());
 		framePojo.setName(name);
 		framePojo.setDescription(description);
-		
+
 		Map<FramePojo, Dataset<Row>> dataMap = new HashMap<>();
-		dataMap.put(framePojo, masterDf);
-		
+		dataMap.put(framePojo, df);
+
 		masterFrames.put(UUID.randomUUID().toString(), dataMap);
 
-//		List<Row> x = masterDf.limit(limit).collectAsList();
-//		JSONObject js = Utils.convertFrameToJson2(x);
-//		//		System.out.println(js);
-//		System.out.println("added frameconvert fetch");
-//		Tuple2<String, String>[] dtypes = masterDf.dtypes();
-//
-//		JSONArray header = Utils.getTypes(dtypes);
-//
-//		js.put("header", header);
+		//		List<Row> x = masterDf.limit(limit).collectAsList();
+		//		JSONObject js = Utils.convertFrameToJson2(x);
+		//		//		System.out.println(js);
+		//		System.out.println("added frameconvert fetch");
+		//		Tuple2<String, String>[] dtypes = masterDf.dtypes();
+		//
+		//		JSONArray header = Utils.getTypes(dtypes);
+		//
+		//		js.put("header", header);
 		Response res = new Response(true, "Frame created", "");
 
 		return new ResponseEntity<>(res, HttpStatus.OK);
 	}
-	
+
 	@RequestMapping("create-view")
 	public ResponseEntity<Response> createView(@RequestParam("viewName") String viewName) {
 
@@ -273,17 +273,17 @@ public class ApiController {
 		return new ResponseEntity<>(res, HttpStatus.OK);
 
 	}
-	
-	
+
+
 
 
 	@RequestMapping("get-active-frames")
 	public ResponseEntity<JSONArray> getActiveFrames() {
-		
+
 		JSONArray jsnArray = new JSONArray();
-		
+
 		for (String key : masterFrames.keySet()) {
-			
+
 			JSONObject obj = new JSONObject();
 			Map<FramePojo, Dataset<Row>> frameData = masterFrames.get(key);
 			obj.put("frame_id", key);
@@ -295,18 +295,19 @@ public class ApiController {
 			}
 			jsnArray.add(obj);	
 		}
-		
+
 		return new ResponseEntity<>(jsnArray, HttpStatus.OK);
 
 	}
-	
-	
+
+
 	@RequestMapping("get-frame-by-id")
 	public ResponseEntity<JSONObject> getFrameById(@RequestParam("frameId") String frameId) {
 
 		Map<FramePojo, Dataset<Row>> frameData = masterFrames.get(frameId);
 		for (FramePojo fPojo : frameData.keySet()) {
 			Dataset<Row> fdf = frameData.get(fPojo);
+			masterDf = fdf;
 			List<Row> x = fdf.limit(limit).collectAsList();
 			JSONObject js = Utils.convertFrameToJson2(x);
 			//		System.out.println(js);
@@ -317,13 +318,13 @@ public class ApiController {
 
 			js.put("header", header);
 			return new ResponseEntity<>(js, HttpStatus.OK);
-			
+
 		}
 		return null;
-		
-		
+
+
 	}
-		
+
 
 
 	@RequestMapping("select-df")
@@ -451,6 +452,16 @@ public class ApiController {
 		Tuple2<String, String>[] dtypes = col1.dtypes();
 
 		JSONArray header = Utils.getTypes(dtypes);
+
+
+		if (columns.size()==1) {
+			long c = currentDf.filter(currentDf.col(columns.get(0)).isNull()).count() + currentDf.filter(currentDf.col(columns.get(0)).equalTo("")).count();
+			js.put("missing_count", c);
+			long distinct = currentDf.select(currentDf.col(columns.get(0))).distinct().count();
+			js.put("distinct_count", distinct);
+		}
+
+
 
 		js.put("header", header);
 		return new ResponseEntity<>(js, HttpStatus.OK);
@@ -782,7 +793,7 @@ public class ApiController {
 
 
 
-				
+
 				predictions.show();
 
 				Transformer[] _stages = pipelineModel.stages();
@@ -824,7 +835,7 @@ public class ApiController {
 
 			}
 			if (model.get("model").equals("naive_bayes")){
-				
+
 				Dataset<Row> predictions = null;
 
 				String best_params = "";
@@ -856,7 +867,7 @@ public class ApiController {
 					nbModel = new NaiveBayes().fit(training);
 					predictions = nbModel.transform(testing);
 				}
-				
+
 				predictions.show();
 
 				Transformer[] _stages = pipelineModel.stages();

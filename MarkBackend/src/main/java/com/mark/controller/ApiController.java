@@ -41,6 +41,7 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.functions;
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema;
+import org.apache.spark.sql.types.DataTypes;
 import org.bson.Document;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -324,23 +325,31 @@ public class ApiController {
 
 	@RequestMapping("select-df")
 	public ResponseEntity<JSONObject> selectDataFrame(@RequestParam("columns") List<String> columns) {
-
+		
 		JavaSparkContext sc = JavaSparkContext.fromSparkContext(sparkSession.sparkContext());
 
 		if (currentDf ==null) {
 			currentDf = masterDf;
 		}
 
-		String[] p = columns.toArray(new String[0]);
-
-		for (String s :p) {
+		String[] exp = new String[columns.size()];
+		
+		
+		int i=0;
+		for (String s :columns) {
 			System.out.println(s);
+			exp[i] = "`"+s.trim()+"`";
+			i++;
 		}
 
 		currentDf.show();
 
-		currentDf = currentDf.selectExpr(p);
-
+		currentDf = currentDf.selectExpr(exp);
+		
+		
+		System.out.println("After filter select-df");
+		
+		currentDf.show();
 
 		List<Row> x = currentDf.limit(limit).collectAsList();
 		JSONObject js = Utils.convertFrameToJson2(x);
@@ -505,6 +514,7 @@ public class ApiController {
 
 			if(tup._2 == "StringType") {
 				categorical.add(tup._1);
+				currentDf = currentDf.withColumn("_" + tup._1 , currentDf.col(tup._1).cast(DataTypes.DoubleType)).drop(tup._1).withColumnRenamed("_" + tup._1, tup._1);
 			}
 			else {
 				numerical.add(tup._1);

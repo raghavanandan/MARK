@@ -499,7 +499,7 @@ public class ApiController {
 
 
 		for(Tuple2<String, String> tup: currentDf.dtypes()){
-			if(tup._1.equals("label")|| tup._1.equals(modelSelection.getOutputCol()) )
+			if(tup._1 == "label")
 
 				continue;
 

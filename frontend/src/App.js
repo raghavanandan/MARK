@@ -43,10 +43,10 @@ class App extends Component {
             <div>
                 <Navbar/>
                 <div className={"col-xs-12 main-layout fluid-container"}>
-                    <div className={(this.state.expandSideNav ? "col-md-1" : "col-md-2") + " side-navbar-div"}>
+                    <div className={"col-md-1 side-navbar-div"}>
                         <SideNavbar section={this.handleSectionChange}/>
                     </div>
-                    <div className={"col-md-10 container-div"}>
+                    <div className={"col-md-11 container-div"}>
                         <Route exact path={"/"} render={(props) => <MainLayout {...props} section={"home"}/>}/>
                         <Route exact path={"/experiments"}
                                render={(props) => <MainLayout {...props} section={"experimentlist"}/>}/>

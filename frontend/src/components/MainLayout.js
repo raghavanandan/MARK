@@ -18,10 +18,11 @@ class MainLayout extends Component{
         this.setState({section: this.props.section});
     }
 
-    loadExperiment(expId) {
+    loadExperiment(expId, expName) {
         if (expId !== "undefined") {
             this.props.history.push({
                 pathname: `/experiments/${expId}`,
+                state: {name: expName}
             })
         }
     }

@@ -24,11 +24,30 @@ class SideNavbar extends Component{
     render() {
         return (
             <div className={'side-navbar'}>
-                <li className={"side-navlinks " + (this.state.section === 'home' ? 'active' : '')} onClick={() => this.handleSectionChange('home')}>
-                    Home
+                <li className={"side-navlinks text-center " + (this.state.section === 'home' ? 'active' : '')} onClick={() => this.handleSectionChange('home')}>
+                    <div className={"side-navlinks-icon"}>
+                        <i className={"fas fa-home"} />
+                    </div>
+                    <div className={"side-navlinks-name"}>
+                        Home
+                    </div>
                 </li>
-                <li className={"side-navlinks " + (this.state.section === 'experiments' ? 'active' : '')} onClick={() => this.handleSectionChange('experiments')}>Experiments</li>
-                <li className={"side-navlinks " + (this.state.section === 'datasets' ? 'active' : '')} onClick={() => this.handleSectionChange('datasets')}>Datasets</li>
+                <li className={"side-navlinks text-center " + (this.state.section === 'experiments' ? 'active' : '')} onClick={() => this.handleSectionChange('experiments')}>
+                    <div className={"side-navlinks-icon"}>
+                        <i className={"fas fa-flask"} />
+                    </div>
+                    <div className={"side-navlinks-name"}>
+                        Experiments
+                    </div>
+                </li>
+                <li className={"side-navlinks text-center " + (this.state.section === 'datasets' ? 'active' : '')} onClick={() => this.handleSectionChange('datasets')}>
+                    <div className={"side-navlinks-icon"}>
+                        <i className={"fas fa-database"} />
+                    </div>
+                    <div className={"side-navlinks-name"}>
+                        Datasets
+                    </div>
+                </li>
             </div>
         );
     }

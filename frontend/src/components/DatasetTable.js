@@ -6,6 +6,7 @@ class DatasetTable extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            expName: this.props.expName,
             file: [],
             headers: [],
             input_params: [],
@@ -17,6 +18,7 @@ class DatasetTable extends Component {
             expandTable: false,
         };
 
+        this.passColumn = this.passColumn.bind(this);
         this.handleInputParams = this.handleInputParams.bind(this);
         this.handleModelParams = this.handleModelParams.bind(this);
         this.handleHyperParams = this.handleHyperParams.bind(this);
@@ -55,6 +57,11 @@ class DatasetTable extends Component {
         this.setState({model_params: PARAMS.hyper_params["Decision Tree"]});
     }
 
+    passColumn(column) {
+        // console.log(column);
+        this.props.column(column);
+    }
+
     handleInputParams(e) {
         if (!this.state.input_params.includes(e.target.value) && this.state.input_params.length < this.state.headers.length - 1) {
             this.state.input_params.push(e.target.value);
@@ -74,10 +81,10 @@ class DatasetTable extends Component {
         let prev = {...this.state.hyper_params};
         if (!value) {
             delete prev[key];
-            this.setState({hyper_params: prev}, () => console.log(this.state.hyper_params));
+            this.setState({hyper_params: prev});
         } else {
             prev[key] = value;
-            this.setState({hyper_params: prev}, () => console.log(this.state.hyper_params));
+            this.setState({hyper_params: prev});
         }
     }
 
@@ -107,12 +114,13 @@ class DatasetTable extends Component {
         if (this.state.model_params.length) {
             model_params = this.state.model_params;
         }
-
+        {/*<div className={(!this.state.expandTable ? "col-md-11" : "col-md-9") + " top-pad fluid-container"}></div>*/}
         return (
-            <div className={(!this.state.expandTable ? "col-md-11" : "col-md-9") + " top-pad fluid-container"}>
+
+            <div className={"col-md-9 top-pad fluid-container"}>
                 <div className={"col-md-12"}>
                     <div className={"header-add-new"}>
-                        <span className={"legend-heading"}>Experiment - 1</span>
+                        <span className={"legend-heading"}>{this.state.expName}</span>
                     </div>
                     <hr className={"legend-separator"}/>
                 </div>
@@ -131,7 +139,7 @@ class DatasetTable extends Component {
                             <thead>
                                 <tr>
                                     {this.state.headers.map((value, index) => (
-                                        <th className={"text-center"} key={index}>{value}</th>
+                                        <th className={"dataset-column text-center"} key={index} onClick={() => this.passColumn(value)}>{value}</th>
                                     ))}
                                 </tr>
                             </thead>
@@ -145,7 +153,7 @@ class DatasetTable extends Component {
                             ))}
                             </tbody>
                         </table>
-                    </div> : <p className={'no-file text-center'}>No file uploaded</p>}
+                    </div> : <p className={'no-file text-center'}>Loading...</p>}
                 {this.state.filter ?
                     <div className={"col-md-5 parameter-div"}>
                         <div className={"col-md-4 input-params"}>

@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
 import UploadDatasetModal from './UploadDatasetModal';
+import CreateExperimentModal from './CreateExperimentModal';
 import * as API from '../api/API';
 import moment from 'moment';
 
@@ -8,18 +9,27 @@ class DataSetList extends Component{
         super(props);
         this.state = {
             addNew: false,
+            createExperiment: false,
+            docId: '',
             datasets: [],
+            showAlert: false,
         };
 
         this.handleFileUpload = this.handleFileUpload.bind(this);
         this.toggleUpload = this.toggleUpload.bind(this);
-        this.createDataframe = this.createDataframe.bind(this);
+        // this.createDataframe = this.createDataframe.bind(this);
+        // this.showAlert = this.showAlert.bind(this);
         this.refreshFiles = this.refreshFiles.bind(this);
     }
 
     componentDidMount() {
         this.refreshFiles();
     }
+
+    // showAlert(msg) {
+    //     console.log(msg);
+    //     this.setState({showAlert: true}, () => console.log(this.state.showAlert));
+    // }
 
     refreshFiles() {
         API.getFiles().then((data) => {
@@ -52,18 +62,19 @@ class DataSetList extends Component{
         });
     }
 
-    createDataframe(docId) {
-        API.createDF(docId).then((data) => {
-            if (data !== null && data !== undefined && data !== 400) {
-                console.log(data);
-            }
-        }).catch((err) => {
-            console.log(err);
-        });
-    }
+    // createDataframe(docId) {
+    //     API.createDF(docId).then((data) => {
+    //         if (data !== null && data !== undefined && data !== 400) {
+    //             console.log(data);
+    //         }
+    //     }).catch((err) => {
+    //         console.log(err);
+    //     });
+    // }
 
     render() {
         let hideUploadDatasetModal = () => this.setState({addNew: false});
+        let hideCreateExperimentModal = () => this.setState({createExperiment: false});
 
         return(
             <div className={"col-md-12 top-pad fluid-container"}>
@@ -91,6 +102,8 @@ class DataSetList extends Component{
                                 <th></th>
                                 <th>Name</th>
                                 <th>Description</th>
+                                <th>File Type</th>
+                                <th>File Size</th>
                                 <th>Created</th>
                             </tr>
                         </thead>
@@ -100,10 +113,12 @@ class DataSetList extends Component{
                                     <td>{index+1}</td>
                                     <td className={"dataset-name"}>{value.name}</td>
                                     <td>{value.description}</td>
+                                    <td>.csv</td>
+                                    <td>{value.size}</td>
                                     <td>
                                         <span>{value.timestamp}</span>
-                                        <span className={"pull-right table-options"} onClick={() => this.createDataframe(value.doc_id)}>
-                                            Create master dataframe
+                                        <span className={"pull-right table-options"} onClick={() => this.setState({createExperiment: true, docId: value.doc_id})}>
+                                            Create Experiment
                                         </span>
                                     </td>
                                 </tr>
@@ -118,6 +133,15 @@ class DataSetList extends Component{
                         show={this.state.addNew}
                         onHide={hideUploadDatasetModal}
                         onSubmit={this.handleFileUpload}
+                    />
+                    : null
+                }
+
+                {this.state.createExperiment ?
+                    <CreateExperimentModal
+                        show={this.state.createExperiment}
+                        onHide={hideCreateExperimentModal}
+                        doc_id={this.state.docId}
                     />
                     : null
                 }

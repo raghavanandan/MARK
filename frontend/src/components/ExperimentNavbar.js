@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+// import ColumnProps from './ColumnProps';
 import VisualizeModal from './VisualizeModal';
 import FilterModal from './FilterModal';
 import ModelModal from './ModelModal';
@@ -7,6 +8,7 @@ class ExperimentNavbar extends Component{
     constructor(props){
         super(props);
         this.state = {
+            columnProps: '',
             showFilterModal: false,
             showVisualizeModal: false,
             showModelModal: false,
@@ -22,7 +24,8 @@ class ExperimentNavbar extends Component{
     }
 
     componentDidMount() {
-        // console.log(this.props.headers);
+        console.log(this.props.columnProps);
+        this.setState({columnProps: this.props.columnProps});
     }
 
     toggleFilterModal() {
@@ -55,8 +58,9 @@ class ExperimentNavbar extends Component{
         let hideVisualizeModal = () => this.setState({showVisualizeModal: false});
         let hideModelModal = () => this.setState({showModelModal: false});
 
+        {/*<div className={(this.state.isExpanded ? "col-md-3" : "hide-exp-nav col-md-1") + " exp-sidebar"}>*/}
         return(
-            <div className={(this.state.isExpanded ? "col-md-3" : "col-md-1") + " exp-sidebar"}>
+            <div className={"col-md-3 exp-sidebar"}>
                 <div className={"hide-show-icon pull-right"} onClick={() => {
                     this.setState({isExpanded: !this.state.isExpanded}, () => this.props.isExpanded(this.state.isExpanded));
                 }}>
@@ -65,18 +69,22 @@ class ExperimentNavbar extends Component{
                         <i className={"fas fa-angle-double-left"}/>
                     }
                 </div>
-                <li className={"exp-links"} onClick={() => this.toggleVisualizeModal()} >
-                    <i className={"fas fa-eye"} />&nbsp;&nbsp;
-                    {this.state.isExpanded ? <span>Visualize Dataset</span> : null}
-                </li>
-                <li className={"exp-links"} onClick={() => this.toggleFilterModal()}>
-                    <i className={"fas fa-exchange-alt"} />&nbsp;&nbsp;
-                    {this.state.isExpanded ? <span>Apply filters</span> : null}
-                </li>
-                <li className={"exp-links"} onClick={() => this.toggleModelModal()}>
-                    <i className={"fas fa-laptop-code"} />&nbsp;&nbsp;
-                    {this.state.isExpanded ? <span>Model Selection</span> : null}
-                </li>
+                {/*{this.state.columnProps.length ?*/}
+                    {/*<ColumnProps column={this.state.columnProps} />*/}
+                    {/*: null*/}
+                {/*}*/}
+                {/*<li className={"exp-links"} onClick={() => this.toggleVisualizeModal()} >*/}
+                    {/*<i className={"fas fa-eye"} />&nbsp;&nbsp;*/}
+                    {/*{this.state.isExpanded ? <span>Visualize Dataset</span> : null}*/}
+                {/*</li>*/}
+                {/*<li className={"exp-links"} onClick={() => this.toggleFilterModal()}>*/}
+                    {/*<i className={"fas fa-exchange-alt"} />&nbsp;&nbsp;*/}
+                    {/*{this.state.isExpanded ? <span>Apply filters</span> : null}*/}
+                {/*</li>*/}
+                {/*<li className={"exp-links"} onClick={() => this.toggleModelModal()}>*/}
+                    {/*<i className={"fas fa-laptop-code"} />&nbsp;&nbsp;*/}
+                    {/*{this.state.isExpanded ? <span>Model Selection</span> : null}*/}
+                {/*</li>*/}
                 <VisualizeModal
                     show={this.state.showVisualizeModal}
                     onHide={hideVisualizeModal}

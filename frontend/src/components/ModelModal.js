@@ -26,6 +26,10 @@ class ModelModal extends Component {
             dataHeaders: "",
             predictionResults: "",
             isTuning: false,
+            showfMeasure: true,
+            showAccuracy: false,
+            showPrecision: false,
+            showRecall: false
         };
 
         this.changeTab = this.changeTab.bind(this);
@@ -36,11 +40,44 @@ class ModelModal extends Component {
         this.updateFeatureColumns = this.updateFeatureColumns.bind(this);
         this.updateModelParams = this.updateModelParams.bind(this);
         this.predictModel = this.predictModel.bind(this);
+        this.togglePredictionResults = this.togglePredictionResults.bind(this);
         this.populateParamValues = this.populateParamValues.bind(this);
     }
 
     componentDidMount() {
         // console.log(this.props.headers);
+    }
+
+    togglePredictionResults(e) {
+        if (e.target.value === "fMeasure") {
+            this.setState({
+                showfMeasure: true,
+                showAccuracy: false,
+                showPrecision: false,
+                showRecall: false
+            })
+        } else if (e.target.value === "Accuracy") {
+            this.setState({
+                showfMeasure: false,
+                showAccuracy: true,
+                showPrecision: false,
+                showRecall: false
+            })
+        } else if (e.target.value === "Precision") {
+            this.setState({
+                showfMeasure: false,
+                showAccuracy: false,
+                showPrecision: true,
+                showRecall: false
+            })
+        } else if (e.target.value === "Recall") {
+            this.setState({
+                showfMeasure: false,
+                showAccuracy: false,
+                showPrecision: false,
+                showRecall: true
+            })
+        }
     }
 
     changeTab(tab) {
@@ -94,7 +131,6 @@ class ModelModal extends Component {
     updateModelParams(option) {
         let prevModels = [];
         let models = [];
-        let hyper_params = {};
         let paramValues = [];
         for (let key in this.state.paramValues) {
             prevModels.push(this.state.paramValues[key]['model'])
@@ -106,6 +142,7 @@ class ModelModal extends Component {
         }
 
         for (let key in models) {
+            let hyper_params = {};
             let model = models[key];
             let params = PARAMS['hyper_params'][model];
             for (let index in params) {
@@ -114,7 +151,7 @@ class ModelModal extends Component {
             paramValues.push({
                 "model": model.toLowerCase().split(" ").join("_"),
                 "hyper_params": hyper_params,
-                "kfold": 1
+                "kfold": 2
             })
         }
 
@@ -193,29 +230,29 @@ class ModelModal extends Component {
     }
 
     predictModel() {
-        console.log(this.state.paramValues);
-        // API.predictModel({outputCol: this.state.targetColumn.value, data: this.state.paramValues}).then((data) => {
-        //     if (data !== 400) {
-        //         let keys = Object.keys(data);
-        //         let arr = [];
-        //         let obj = this.state.testData;
-        //         let headers = this.state.dataHeaders;
-        //         for (let key in obj) {
-        //             for (let index in keys) {
-        //                 let new_key = this.state.targetColumn.value + '_' + keys[index];
-        //                 if (!arr.includes(new_key)) {
-        //                     arr.push(new_key);
-        //                     headers.push({header: new_key});
-        //                 }
-        //
-        //                 obj[key][new_key] = data[keys[index]]['prediction']['docs'][key];
-        //             }
-        //         }
-        //         this.setState({predictionResults: data, testData: obj, dataHeaders: headers, runModel: false, showResults: true});
-        //     }
-        // }).catch((err) => {
-        //     console.log(err);
-        // })
+        // console.log(this.state.paramValues);
+        API.predictModel({outputCol: this.state.targetColumn.value, data: this.state.paramValues}).then((data) => {
+            if (data !== 400) {
+                let keys = Object.keys(data);
+                let arr = [];
+                let obj = this.state.testData;
+                let headers = this.state.dataHeaders;
+                for (let key in obj) {
+                    for (let index in keys) {
+                        let new_key = this.state.targetColumn.value + '_' + keys[index];
+                        if (!arr.includes(new_key)) {
+                            arr.push(new_key);
+                            headers.push({header: new_key});
+                        }
+
+                        obj[key][new_key] = data[keys[index]]['prediction']['docs'][key];
+                    }
+                }
+                this.setState({predictionResults: data, testData: obj, dataHeaders: headers, runModel: false, showResults: true});
+            }
+        }).catch((err) => {
+            console.log(err);
+        })
     }
 
     showPrepModel() {
@@ -341,8 +378,8 @@ class ModelModal extends Component {
     showTestResults() {
         // console.log(this.state.dataHeaders);
         // console.log(this.state.trainData);
-        console.log(this.state.testData);
-        console.log(this.state.predictionResults);
+        // console.log(this.state.testData);
+        // console.log(this.state.predictionResults);
         return (
             <div className={"model-div col-md-12"}>
                 <div className={"col-md-4 right-bordered"}>
@@ -403,14 +440,39 @@ class ModelModal extends Component {
                                 <div key={index}>
                                     <h3 className={"less-margin text-center"} >{model.value}</h3>
                                     <div className={"col-md-12"}>
-                                        <span className={"col-md-3"}>fMeasure:</span>
-                                        <span className={"col-md-9"}>{this.state.predictionResults[model.value.toLowerCase().split(" ").join("_")]['fMeasure']}</span>
-                                        <span className={"col-md-3"}>Accuracy:</span>
-                                        <span className={"col-md-9"}>{this.state.predictionResults[model.value.toLowerCase().split(" ").join("_")]['accuracy']}</span>
-                                        <span className={"col-md-3"}>Precision:</span>
-                                        <span className={"col-md-9"}>{this.state.predictionResults[model.value.toLowerCase().split(" ").join("_")]['precision']}</span>
-                                        <span className={"col-md-3"}>Recall:</span>
-                                        <span className={"col-md-9"}>{this.state.predictionResults[model.value.toLowerCase().split(" ").join("_")]['recall']}</span>
+                                        <label>Show:</label> &nbsp;
+                                        <select onChange={(e) => this.togglePredictionResults(e)}>
+                                            <option value={"fMeasure"}>fMeasure</option>
+                                            <option value={"Accuracy"}>Accuracy</option>
+                                            <option value={"Precision"}>Precision</option>
+                                            <option value={"Recall"}>Recall</option>
+                                        </select>
+                                    </div>
+                                    <div className={"col-md-12"}>
+                                        {this.state.showfMeasure ?
+                                        <>
+                                            <label className={"col-md-3 no-pad"}>fMeasure:</label>
+                                            <span className={"col-md-9"}>{this.state.predictionResults[model.value.toLowerCase().split(" ").join("_")]['fMeasure']}</span>
+                                        </>: null
+                                        }
+                                        {this.state.showAccuracy ?
+                                        <>
+                                            <label className={"col-md-3 no-pad"}>Accuracy:</label>
+                                            <span className={"col-md-9"}>{this.state.predictionResults[model.value.toLowerCase().split(" ").join("_")]['accuracy']}</span>
+                                        </> : null
+                                        }
+                                        {this.state.showPrecision ?
+                                        <>
+                                            <label className={"col-md-3 no-pad"}>Precision:</label>
+                                            <span className={"col-md-9"}>{this.state.predictionResults[model.value.toLowerCase().split(" ").join("_")]['precision']}</span>
+                                        </> : null
+                                        }
+                                        {this.state.showRecall ?
+                                        <>
+                                            <label className={"col-md-3 no-pad"}>Recall:</label>
+                                            <span className={"col-md-9"}>{this.state.predictionResults[model.value.toLowerCase().split(" ").join("_")]['recall']}</span>
+                                        </> : null
+                                        }
                                     </div>
                                 </div>
                             ))}

@@ -1,24 +1,39 @@
 import React, {Component} from 'react';
 // import {connect} from 'react-redux'
+import * as API from '../api/API';
+import moment from 'moment';
 
 class ExperimentList extends Component {
     constructor(props){
         super(props);
         this.state = {
-            expId: '',
+            experiments: [],
         };
 
         this.chooseExperiment = this.chooseExperiment.bind(this);
     }
 
     componentDidMount() {
-        let id = localStorage.getItem('docId');
-        this.setState({expId: id});
+        // let id = localStorage.getItem('docId');
+        // this.setState({expId: id});
+        API.getAllFrames().then((data) => {
+            if (data !== 400) {
+                for (let key in data) {
+                    let created_temp = moment(data[key]['created_timestamp']).format("MMM DD, YYYY");
+                    let modified_temp = moment(data[key]['modified_timestamp']).format("MMM DD, YYYY");
+                    data[key]['created_timestamp'] = created_temp;
+                    data[key]['modified_timestamp'] = modified_temp;
+                }
+                this.setState({experiments: data});
+            }
+        }).catch((err) => {
+            console.log(err);
+        })
     }
 
-    chooseExperiment(e) {
-        // console.log(e);
-        this.props.expId(this.state.expId);
+    chooseExperiment(expId, expName) {
+        // console.log(expId);
+        this.props.expId(expId, expName);
     }
 
     render() {
@@ -27,35 +42,41 @@ class ExperimentList extends Component {
                 <div className={"col-md-12"}>
                     <div className={"header-add-new"}>
                         <span className={"legend-heading"}>Experiments</span>
-                        <span className={"add-new pull-right"} onClick={() => this.toggleUpload()}>
-                            <button className={"add-new-btn"}>
-                            <i className={"fas fa-plus"} />
-                                &nbsp; Add new
-                            </button>
-                        </span>
                     </div>
                     <hr className={"legend-separator"} />
                 </div>
-                <div className={"col-md-10 table-div"}>
-                    <table className={"table experiment-table"}>
-                        <thead>
-                            <tr>
-                                <th></th>
-                                <th>Name</th>
-                                <th>Created</th>
-                                <th>Last Modified</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td className={"experiment-name"} onClick={(e) => this.chooseExperiment(e)}>Evaluating adult_income file</td>
-                                <td>Apr 05, 2019</td>
-                                <td>Apr 06, 2019</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                {this.state.experiments.length ?
+                    <div className={"col-md-10 table-div"}>
+                        <table className={"table experiment-table"}>
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Name</th>
+                                    <th>Description</th>
+                                    <th>Created</th>
+                                    <th>Last Modified</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {this.state.experiments.map((value,index) => (
+                                <tr key={index} className={"experiment-row"} onClick={() => this.chooseExperiment(value.frame_id, value.name)}>
+                                    <td>{index+1}</td>
+                                    <td className={"experiment-name"}>{value.name}</td>
+                                    <td>{value.description}</td>
+                                    <td>{value.created_timestamp}</td>
+                                    <td>{value.modified_timestamp}</td>
+                                </tr>
+                            ))}
+                                {/*<tr className={"experiment-row"} onClick={() => this.chooseExperiment("Evaluating adult_income file")}>*/}
+                                    {/*<td>1</td>*/}
+                                    {/*<td className={"experiment-name"}>Evaluating adult_income file</td>*/}
+                                    {/*<td>Apr 05, 2019</td>*/}
+                                    {/*<td>Apr 06, 2019</td>*/}
+                                {/*</tr>*/}
+                            </tbody>
+                        </table>
+                    </div> : null
+                }
             </div>
         )
     }

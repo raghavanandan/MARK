@@ -35,12 +35,13 @@ export const putFile = (file) => {
     })
 };
 
-export const createDF = (docId) => {
-  return fetch(`${url}/create-master-df/?docId=${docId}`)
+export const createDF = (data) => {
+    const {docId, name, description} = data;
+  return fetch(`${url}/create-master-df/?docId=${docId}&name=${name}&description=${description}`)
       .then((res) => res.json())
       .then((resJSON) => {
           return resJSON;
-      }).catch((err) => {
+      }).catch(() => {
           return 400;
       })
 };
@@ -87,6 +88,26 @@ export const resetDF = () => {
         })
 };
 
+export const getFrame = (frameId) => {
+    return fetch(`${url}/get-frame-by-id/?frameId=${frameId}`)
+        .then((res) => res.json())
+        .then((resJSON) => {
+            return resJSON;
+        }).catch(() => {
+            return 400;
+        })
+};
+
+export const getAllFrames = () => {
+    return fetch(`${url}/get-active-frames`)
+        .then((res) => res.json())
+        .then((resJSON) => {
+            return resJSON;
+        }).catch(() => {
+            return 400;
+        })
+};
+
 export const createView = (viewName) => {
     return fetch(`${url}/create-view/?viewName=${viewName}`)
         .then((res) => res.json())
@@ -96,23 +117,28 @@ export const createView = (viewName) => {
             return 400;
         })
 };
-
-export const getFrame = (frametype) => {
-    return fetch(`${url}/get-frame/?frame=${frametype}`)
-        .then((res) => res.json())
-        .then((resJSON) => {
-            return resJSON;
-        }).catch(() => {
-            return 400;
-        })
-};
+//
+// export const getFrame = (frametype) => {
+//     return fetch(`${url}/get-frame/?frame=${frametype}`)
+//         .then((res) => res.json())
+//         .then((resJSON) => {
+//             return resJSON;
+//         }).catch(() => {
+//             return 400;
+//         })
+// };
 
 export const getColumnData = (column) => {
     return fetch(`${url}/visualizations/?column=${column}&column_type=cookie`)
-        .then((res) => res.json())
-        .then((resJSON) => {
+        .then((res) => {
+            if (res.status !== 200) {
+                throw Error(res.statusText);
+            } else {
+                return res.json();
+            }
+        }).then((resJSON) => {
             return resJSON;
-        }).catch(() => {
+        }).catch((err) => {
             return 400;
         })
 };

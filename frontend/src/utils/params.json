@@ -8,73 +8,85 @@
   ],
   "hyper_params": {
     "Logistic Regression": [
-      "elasticNetParam",
-      "maxIter",
-      "regParam",
-      "tol"
+      {
+        "name": "elasticNetParam",
+        "defaultValue": "0.0"
+      },
+      {
+        "name": "maxIter",
+        "defaultValue": "100"
+      },
+      {
+        "name": "regParam",
+        "defaultValue": "0.0"
+      },
+      {
+        "name": "tol",
+        "defaultValue": "0.0001"
+      }
     ],
     "Decision Tree": [
       {
         "name": "maxBins",
-        "defaultValue": 32
+        "defaultValue": "32"
       },
       {
         "name": "maxDepth",
-        "defaultValue": 1
+        "defaultValue": "1"
       },
       {
         "name": "minInfoGain",
-        "defaultValue": 0.0
+        "defaultValue": "0.0"
       },
       {
-        "name": "minInstancesperNode",
-        "defaultValue": 2
+        "name": "minInstancesPerNode",
+        "defaultValue": "2"
       }
     ],
     "Naive Bayes": [
       {
         "name": "smoothing",
-        "defaultValue": 0.000000001
+        "defaultValue": "0.000000001"
       }
     ],
     "Random Forest": [
       {
         "name": "maxBins",
-        "defaultValue": 32
+        "defaultValue": "32"
       },
       {
         "name": "maxDepth",
-        "defaultValue": 1
+        "defaultValue": "1"
       },
       {
         "name": "minInfoGain",
-        "defaultValue": 0.0
+        "defaultValue": "0.0"
       },
       {
         "name": "numTrees",
-        "defaultValue": 10
+        "defaultValue": "10"
       }
     ],
     "Gradient Boosted Trees": [
       {
         "name": "maxBins",
-        "defaultValue": 20
+        "defaultValue": "20"
       },
       {
         "name": "maxDepth",
-        "defaultValue": 3
+        "defaultValue": "3"
       },
       {
         "name": "maxIter",
-        "defaultValue": 100
+        "defaultValue": "100"
       },
       {
         "name": "stepSize",
-        "defaultValue": 1
+        "defaultValue": "1"
       },
       {
         "name": "subSamplingRate",
-        "defaultValue": 1
+        "defaultValue": "1"
       }
     ]
   }

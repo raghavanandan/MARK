@@ -499,7 +499,7 @@ public class ApiController {
 
 
 		for(Tuple2<String, String> tup: currentDf.dtypes()){
-			if(tup._1 == "label")
+			if(tup._1 == modelSelection.getOutputCol())
 
 				continue;
 
@@ -567,45 +567,6 @@ public class ApiController {
 
 		return new ResponseEntity<>(res, HttpStatus.OK);
 
-	}
-
-
-	@RequestMapping(value="run-predict")
-	public ResponseEntity<Response> runPredict(){
-
-		//LogisticRegressionModel lrModel = new LogisticRegression().fit(training);
-
-		NaiveBayesModel lrModel = new NaiveBayes().fit(training);
-
-		Dataset<Row> predictions = lrModel.transform(testing);
-		predictions.show();
-
-		Transformer[] _stages = pipelineModel.stages();
-
-		StringIndexerModel temp = (StringIndexerModel)_stages[0];
-
-
-		IndexToString trs = new IndexToString().setLabels(temp.labels()).setInputCol("prediction").setOutputCol("prediction-original");
-		predictions = trs.transform(predictions);
-
-		predictions.show();
-
-
-		//		RDD<Row> temp_rdd = testing.select("sexIndex", "prediction").map(new Function1<Row, Tuple2>(){});
-
-
-
-
-
-		MulticlassMetrics metrics = new MulticlassMetrics(predictions.select("SexIndex", "prediction"));
-
-		System.out.println(metrics.accuracy());
-		System.out.println(metrics.fMeasure());
-
-		return null;
-
-
-		//lr, nb, dtree, rforest, gradientbTrees
 	}
 
 	@RequestMapping(value="predict")

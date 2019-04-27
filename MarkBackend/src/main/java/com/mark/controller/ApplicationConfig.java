@@ -70,7 +70,6 @@ public class ApplicationConfig {
                 .sparkContext(javaSparkContext().sc())
                 .appName("Java Spark SQL basic example")
                 .getOrCreate();
-        spark.sparkContext().setLogLevel("ERROR");
         return spark;
     }
 

@@ -4,25 +4,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.bson.BSON;
 import org.bson.types.ObjectId;
-import org.dmg.pmml.Array;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.mortbay.util.ajax.JSON;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.esotericsoftware.kryo.util.IntMap;
-import com.google.gson.Gson;
-import com.mongodb.BasicDBObject;
-import com.mongodb.BulkWriteOperation;
-import com.mongodb.DBCollection;
-import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
@@ -30,23 +20,12 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
 
-import javassist.bytecode.Descriptor.Iterator;
-
 
 @Component
 public class Mongo {
 
 	@Autowired
 	private MongoClient mc;
-
-
-
-	public void testCon() {
-		System.out.println("inside test con");
-		MongoDatabase db = mc.getDatabase("mark");
-		db.createCollection("mohit_lund");
-	}
-
 
 	public JSONObject getDoc(String docId) {
 		MongoDatabase db = mc.getDatabase("mark");

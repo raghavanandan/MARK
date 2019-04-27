@@ -39,6 +39,8 @@ import org.apache.spark.mllib.evaluation.MulticlassMetrics;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.functions;
+import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema;
 import org.bson.Document;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -75,8 +77,6 @@ import scala.Tuple2;
 @RequestMapping("api")
 @Controller
 public class ApiController {
-	@Autowired
-	WordCount wordCount;
 
 	@Autowired
 	FileParser fileParser;
@@ -105,11 +105,6 @@ public class ApiController {
 	private static final int limit = 50;
 
 	private static Map<String, Map<FramePojo,Dataset<Row>>> masterFrames = new HashMap<>();
-
-	@RequestMapping("wordcount")
-	public ResponseEntity<List<Count>> words() {
-		return new ResponseEntity<>(wordCount.count(), HttpStatus.OK);
-	}
 
 	@RequestMapping(value = "upload-file", method = RequestMethod.POST, produces =MediaType.APPLICATION_JSON_VALUE )
 	public ResponseEntity<Response> uploadFile(@RequestParam("file") MultipartFile file,@RequestParam("name") String name, @RequestParam("description") String description){
@@ -459,6 +454,11 @@ public class ApiController {
 			js.put("missing_count", c);
 			long distinct = currentDf.select(currentDf.col(columns.get(0))).distinct().count();
 			js.put("distinct_count", distinct);
+			
+			Dataset<Row> mode = currentDf.groupBy(currentDf.col(columns.get(0))).count().sort(functions.desc("count")).limit(1).select(columns.get(0));
+			Object _mode = ((GenericRowWithSchema)mode.first()).values()[0];
+			
+			js.put("mode", _mode);
 		}
 
 
@@ -499,7 +499,7 @@ public class ApiController {
 
 
 		for(Tuple2<String, String> tup: currentDf.dtypes()){
-			if(tup._1 == "label")
+			if(tup._1.equals("label")|| tup._1.equals(modelSelection.getOutputCol()) )
 
 				continue;
 

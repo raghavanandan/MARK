@@ -14,6 +14,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.env.Environment;
 
+import com.codahale.metrics.Slf4jReporter.LoggingLevel;
 import com.mongodb.MongoClient;
 
 /**
@@ -60,7 +61,6 @@ public class ApplicationConfig {
     @Bean
     public JavaSparkContext javaSparkContext() {
     	jsc = new JavaSparkContext(sparkConf());
-    	jsc.setLogLevel("ERROR");
         return jsc;
     }
 
@@ -71,7 +71,7 @@ public class ApplicationConfig {
                 .sparkContext(javaSparkContext().sc())
                 .appName("Java Spark SQL basic example")
                 .getOrCreate();
-        		
+        spark.sparkContext().setLogLevel("ERROR");
         return spark;
     }
 

@@ -4,6 +4,7 @@ import DatasetTable from "./DatasetTable";
 import VisualizeContent from "./VisualizeContent";
 import FilterContent from "./FilterContent";
 import TrainContent from "./TrainContent";
+import TuningContent from "./TuningContent";
 // import ExperimentNavbar from "./ExperimentNavbar";
 
 class WorkspaceLayout extends Component {
@@ -17,6 +18,7 @@ class WorkspaceLayout extends Component {
             showVis: false,
             showFilters: false,
             showModels: false,
+            showTuning: false,
             filters: {},
             column: '',
             isExpanded: false,
@@ -44,6 +46,7 @@ class WorkspaceLayout extends Component {
                 showVis: false,
                 showFilters: false,
                 showModels: false,
+                showTuning: false
             })
         } else if (tab === "VISUALIZE") {
             this.setState({
@@ -51,6 +54,7 @@ class WorkspaceLayout extends Component {
                 showVis: true,
                 showFilters: false,
                 showModels: false,
+                showTuning: false
             })
         } else if (tab === "FILTERS") {
             this.setState({
@@ -58,6 +62,7 @@ class WorkspaceLayout extends Component {
                 showVis: false,
                 showFilters: true,
                 showModels: false,
+                showTuning: false
             })
         } else if (tab === "MODELS") {
             this.setState({
@@ -65,6 +70,15 @@ class WorkspaceLayout extends Component {
                 showVis: false,
                 showFilters: false,
                 showModels: true,
+                showTuning: false
+            })
+        } else if (tab === "TUNING") {
+            this.setState({
+                showData: false,
+                showVis: false,
+                showFilters: false,
+                showModels: false,
+                showTuning: true
             })
         }
     }
@@ -116,6 +130,7 @@ class WorkspaceLayout extends Component {
                     <div className={"col-md-1 text-center workspace-nav " + (this.state.showVis ? "tab-active" : "")} onClick={() => this.changeContent("VISUALIZE")}>VISUALIZE</div>
                     <div className={"col-md-1 text-center workspace-nav " + (this.state.showFilters ? "tab-active" : "")} onClick={() => this.changeContent("FILTERS")}>FILTERS</div>
                     <div className={"col-md-1 text-center workspace-nav " + (this.state.showModels ? "tab-active" : "")} onClick={() => this.changeContent("MODELS")}>TRAIN</div>
+                    <div className={"col-md-1 text-center workspace-nav " + (this.state.showTuning ? "tab-active" : "")} onClick={() => this.changeContent("TUNING")}>TUNING</div>
                 </div>
                 <div className={"col-md-12 workspace-content"}>
                     {this.state.showData ?
@@ -132,6 +147,10 @@ class WorkspaceLayout extends Component {
                     }
                     {this.state.showModels ?
                         <TrainContent expId={this.state.expId} reset={true}/>
+                        : null
+                    }
+                    {this.state.showTuning ?
+                        <TuningContent expId={this.state.expId}/>
                         : null
                     }
                 </div>

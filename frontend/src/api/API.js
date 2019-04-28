@@ -2,8 +2,13 @@ const url = 'http://localhost:8080/api';
 
 export const getFiles = () => {
     return fetch(`${url}/get-docs`)
-        .then((res) => res.json())
-        .then((resJSON) => {
+        .then((res) => {
+            if (res.status !== 200) {
+                throw Error(res.statusText);
+            } else {
+                return res.json();
+            }
+        }).then((resJSON) => {
             return resJSON;
         }).catch(() => {
             return 400;
@@ -12,8 +17,13 @@ export const getFiles = () => {
 
 export const getFile = (docId) => {
     return fetch(`${url}/get-doc/?docId=${docId}`)
-        .then((res) => res.json())
-        .then((resJSON) => {
+        .then((res) => {
+            if (res.status !== 200) {
+                throw Error(res.statusText);
+            } else {
+                return res.json();
+            }
+        }).then((resJSON) => {
             return resJSON;
         }).catch(() => {
             return 400;
@@ -27,7 +37,11 @@ export const putFile = (file) => {
         method: 'POST',
         body: data
     }).then((res) => {
-        return res.json()
+        if (res.status !== 200) {
+            throw Error(res.statusText);
+        } else {
+            return res.json();
+        }
     }).then((resJSON) => {
         return resJSON;
     }).catch(() => {
@@ -37,19 +51,29 @@ export const putFile = (file) => {
 
 export const createDF = (data) => {
     const {docId, name, description} = data;
-  return fetch(`${url}/create-master-df/?docId=${docId}&name=${name}&description=${description}`)
-      .then((res) => res.json())
-      .then((resJSON) => {
+    return fetch(`${url}/create-master-df/?docId=${docId}&name=${name}&description=${description}`)
+        .then((res) => {
+            if (res.status !== 200) {
+                throw Error(res.statusText);
+            } else {
+                return res.json();
+            }
+        }).then((resJSON) => {
           return resJSON;
-      }).catch(() => {
+        }).catch(() => {
           return 400;
-      })
+        })
 };
 
 export const selectDF = (columns) => {
     return fetch(`${url}/select-df/?columns=${columns}`)
-        .then((res) => res.json())
-        .then((resJSON) => {
+        .then((res) => {
+            if (res.status !== 200) {
+                throw Error(res.statusText);
+            } else {
+                return res.json();
+            }
+        }).then((resJSON) => {
             return resJSON;
         }).catch(() => {
             return 400;
@@ -70,18 +94,28 @@ export const queryDF = (query) => {
             'Content-Type': 'application/json'
         }),
         body: JSON.stringify(data)
-    }).then((res) => res.json())
-        .then((resJSON) => {
-            return resJSON;
-        }).catch(() => {
-            return 400;
-        })
+        }).then((res) => {
+            if (res.status !== 200) {
+                throw Error(res.statusText);
+            } else {
+                return res.json();
+            }
+        }).then((resJSON) => {
+                return resJSON;
+            }).catch(() => {
+                return 400;
+            })
 };
 
 export const resetDF = () => {
     return fetch(`${url}/reset-frame`)
-        .then((res) => res.json())
-        .then((resJSON) => {
+        .then((res) => {
+            if (res.status !== 200) {
+                throw Error(res.statusText);
+            } else {
+                return res.json();
+            }
+        }).then((resJSON) => {
             return resJSON;
         }).catch(() => {
             return 400;
@@ -90,8 +124,13 @@ export const resetDF = () => {
 
 export const getFrame = (frameId) => {
     return fetch(`${url}/get-frame-by-id/?frameId=${frameId}`)
-        .then((res) => res.json())
-        .then((resJSON) => {
+        .then((res) => {
+            if (res.status !== 200) {
+                throw Error(res.statusText);
+            } else {
+                return res.json();
+            }
+        }).then((resJSON) => {
             return resJSON;
         }).catch(() => {
             return 400;
@@ -100,8 +139,13 @@ export const getFrame = (frameId) => {
 
 export const getAllFrames = () => {
     return fetch(`${url}/get-active-frames`)
-        .then((res) => res.json())
-        .then((resJSON) => {
+        .then((res) => {
+            if (res.status !== 200) {
+                throw Error(res.statusText);
+            } else {
+                return res.json();
+            }
+        }).then((resJSON) => {
             return resJSON;
         }).catch(() => {
             return 400;
@@ -110,23 +154,18 @@ export const getAllFrames = () => {
 
 export const createView = (viewName) => {
     return fetch(`${url}/create-view/?viewName=${viewName}`)
-        .then((res) => res.json())
-        .then((resJSON) => {
+        .then((res) => {
+            if (res.status !== 200) {
+                throw Error(res.statusText);
+            } else {
+                return res.json();
+            }
+        }).then((resJSON) => {
             return resJSON;
         }).catch(() => {
             return 400;
         })
 };
-//
-// export const getFrame = (frametype) => {
-//     return fetch(`${url}/get-frame/?frame=${frametype}`)
-//         .then((res) => res.json())
-//         .then((resJSON) => {
-//             return resJSON;
-//         }).catch(() => {
-//             return 400;
-//         })
-// };
 
 export const getColumnData = (column) => {
     return fetch(`${url}/visualizations/?column=${column}&column_type=cookie`)
@@ -138,15 +177,20 @@ export const getColumnData = (column) => {
             }
         }).then((resJSON) => {
             return resJSON;
-        }).catch((err) => {
+        }).catch(() => {
             return 400;
         })
 };
 
 export const compareColumns = (column1, column2) => {
     return fetch(`${url}/visualizations-multiple/?columns=${column1},${column2}`)
-        .then((res) => res.json())
-        .then((resJSON) => {
+        .then((res) => {
+            if (res.status !== 200) {
+                throw Error(res.statusText);
+            } else {
+                return res.json();
+            }
+        }).then((resJSON) => {
             return resJSON;
         }).catch(() => {
             return 400;
@@ -155,8 +199,13 @@ export const compareColumns = (column1, column2) => {
 
 export const getStats = (column) => {
     return fetch(`${url}/statistics/?columns=${column}`)
-        .then((res) => res.json())
-        .then((resJSON) => {
+        .then((res) => {
+            if (res.status !== 200) {
+                throw Error(res.statusText);
+            } else {
+                return res.json();
+            }
+        }).then((resJSON) => {
             return resJSON;
         }).catch(() => {
             return 400;
@@ -170,12 +219,17 @@ export const prepareModel = (modelData) => {
             'Content-Type': 'application/json'
         }),
         body: JSON.stringify(modelData)
-    }).then((res) => res.json())
-        .then((resJSON) => {
-            return resJSON;
-        }).catch(() => {
-        return 400;
-    })
+        }).then((res) => {
+            if (res.status !== 200) {
+                throw Error(res.statusText);
+            } else {
+                return res.json();
+            }
+        }).then((resJSON) => {
+                return resJSON;
+            }).catch(() => {
+            return 400;
+        })
 };
 
 export const predictModel = (modelData) => {
@@ -185,10 +239,15 @@ export const predictModel = (modelData) => {
             'Content-Type': 'application/json'
         }),
         body: JSON.stringify(modelData)
-    }).then((res) => res.json())
-        .then((resJSON) => {
-            return resJSON;
-        }).catch(() => {
-        return 400;
-    })
+        }).then((res) => {
+            if (res.status !== 200) {
+                throw Error(res.statusText);
+            } else {
+                return res.json();
+            }
+        }).then((resJSON) => {
+                return resJSON;
+            }).catch(() => {
+            return 400;
+        })
 };

@@ -1,12 +1,14 @@
 import React, {Component} from 'react';
 import {Form, Modal} from 'react-bootstrap';
 import * as API from '../api/API';
+import {Loader} from "./Loader";
 
 class CreateExperimentModal extends Component{
     constructor(props){
         super(props);
         this.state = {
-            docId: this.props.doc_id
+            docId: this.props.doc_id,
+            loader: false
         };
 
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -17,6 +19,7 @@ class CreateExperimentModal extends Component{
     }
 
     handleSubmit(event) {
+        this.setState({loader: true});
         const form = event.currentTarget;
         const expData = {
             docId: this.state.docId,
@@ -26,12 +29,13 @@ class CreateExperimentModal extends Component{
         API.createDF(expData).then((data) => {
             if (data !== 400) {
                 console.log(data);
-                // this.props.alert("Yes");
+                this.setState({loader: false}, () => {
+                    this.props.onHide();
+                });
             }
         }).catch((err) => {
             console.log(err);
         });
-        this.props.onHide();
         event.stopPropagation();
         event.preventDefault();
     }
@@ -49,7 +53,10 @@ class CreateExperimentModal extends Component{
                         Create a new experiment
                     </Modal.Title>
                 </Modal.Header>
-                <Modal.Body className={"no-pad"}>
+                <Modal.Body className={"no-pad medium-top-pad"}>
+                    {this.state.loader ?
+                        <Loader/> : null
+                    }
                     <Form className={"form-pad"} onSubmit={(e) => this.handleSubmit(e)}>
                         <Form.Group controlId={"formBasicName"}>
                             <Form.Label>Enter a name for the experiment: <span className={"required"}>*</span></Form.Label>

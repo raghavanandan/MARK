@@ -47,7 +47,7 @@ export default class VisualizeContent extends Component{
     }
 
     showDetails(column) {
-        this.setState({chosenColumn: column, loader: true});
+        this.setState({chosenColumn: column, loader: true, scatterData: "", optionFilter: ""});
         API.getColumnData(column).then((data) => {
             if (data !== 400) {
                 let ndata = data.docs;

@@ -109,7 +109,7 @@ class DataContent extends Component{
                             <div className={"col-md-12 no-pad"}>
                                 <h3>Column Properties</h3>
                             </div>
-                            <div className={"col-md-12 no-pad medium-top-pad"}>
+                            <div className={"col-md-12 no-pad top-pad"}>
                                 <div className={"form-horizontal no-pad"}>
                                     {this.state.singleColumnStats ?
                                         <>
@@ -226,7 +226,7 @@ class DataContent extends Component{
                 <div className={"col-md-9 content-div"}>
                     {this.state.file.length ?
                         <div className={"file-table table-responsive"}>
-                            <table className={"table"}>
+                            <table className={"table custom-table"}>
                                 <thead>
                                     <tr>
                                         {this.state.headers.map((value, index) => (

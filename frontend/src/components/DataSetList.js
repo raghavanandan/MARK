@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import UploadDatasetModal from './UploadDatasetModal';
 import CreateExperimentModal from './CreateExperimentModal';
+import {Loader} from './Loader';
 import * as API from '../api/API';
 import moment from 'moment';
 
@@ -13,6 +14,7 @@ class DataSetList extends Component{
             docId: '',
             datasets: [],
             showAlert: false,
+            loader: false,
         };
 
         this.handleFileUpload = this.handleFileUpload.bind(this);
@@ -62,6 +64,7 @@ class DataSetList extends Component{
         });
     }
 
+
     // createDataframe(docId) {
     //     API.createDF(docId).then((data) => {
     //         if (data !== null && data !== undefined && data !== 400) {
@@ -75,6 +78,7 @@ class DataSetList extends Component{
     render() {
         let hideUploadDatasetModal = () => this.setState({addNew: false});
         let hideCreateExperimentModal = () => this.setState({createExperiment: false});
+        let showLoader = () => {console.log('Got back')};
 
         return(
             <div className={"col-md-12 top-pad fluid-container"}>
@@ -94,6 +98,7 @@ class DataSetList extends Component{
                 </div>
 
                 {/*Table*/}
+                {/*{this.state.loader ? <Loader/> : null}*/}
                 {this.state.datasets.length ?
                 <div className={"col-md-10 table-div"}>
                     <table className={"table dataset-table"}>

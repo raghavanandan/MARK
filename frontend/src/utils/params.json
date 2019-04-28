@@ -3,8 +3,10 @@
     "Decision Tree",
     "Logistic Regression",
     "Naive Bayes",
-    "Random Forest",
-    "Gradient Boosted Trees"
+    "Random Forests",
+    "Gradient Boosted Trees",
+    "K-Means",
+    "Bisecting K-Means"
   ],
   "hyper_params": {
     "Logistic Regression": [
@@ -49,7 +51,7 @@
         "defaultValue": "0.000000001"
       }
     ],
-    "Random Forest": [
+    "Random Forests": [
       {
         "name": "maxBins",
         "defaultValue": "32"
@@ -87,6 +89,26 @@
       {
         "name": "subSamplingRate",
         "defaultValue": "1"
+      }
+    ],
+    "K-Means": [
+      {
+        "name": "A",
+        "defaultValue": "10"
+      },
+      {
+        "name": "B",
+        "defaultValue": "10"
+      }
+    ],
+    "Bisecting K-Means": [
+      {
+        "name": "A",
+        "defaultValue": "10"
+      },
+      {
+        "name": "B",
+        "defaultValue": "10"
       }
     ]
   }

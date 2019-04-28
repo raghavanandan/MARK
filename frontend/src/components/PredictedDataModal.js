@@ -2,9 +2,9 @@ import React from 'react';
 import {Modal} from 'react-bootstrap';
 
 export const PredictedDataModal = (props) => {
-    console.log(props.results);
-    console.log(props.data);
-    console.log(props.headers);
+    // console.log(props.results);
+    // console.log(props.data);
+    // console.log(props.headers);
     return (
         <Modal
             show={props.show}

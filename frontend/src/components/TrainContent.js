@@ -4,7 +4,12 @@ import * as API from "../api/API";
 import {Loader} from "./Loader";
 import {PredictedDataModal} from "./PredictedDataModal";
 import * as PARAMS from "../utils/params";
-import ModelModal from "./ExperimentNavbar";
+
+import ReactFC from 'react-fusioncharts';
+import FusionCharts from 'fusioncharts';
+import Column2D from 'fusioncharts/fusioncharts.charts';
+import FusionTheme from 'fusioncharts/themes/fusioncharts.theme.fusion';
+ReactFC.fcRoot(FusionCharts, Column2D, FusionTheme);
 
 class TrainContent extends Component {
     constructor(props) {
@@ -17,6 +22,7 @@ class TrainContent extends Component {
             predictionHeaders: [],
             targetColumn: null,
             targetType: "",
+            modelGroup: "",
             inputColumns: null,
             otherOptions: [],
             testSplit: "",
@@ -27,6 +33,8 @@ class TrainContent extends Component {
             paramValues: [],
             predictionResults: "",
             viewPredictedData: false,
+            showPredictionChart: false,
+            chartData: {}
         };
 
         this.updateFeatureColumns = this.updateFeatureColumns.bind(this);
@@ -38,7 +46,8 @@ class TrainContent extends Component {
         API.getFrame(this.state.expId).then((data) => {
             if (data !== 400) {
                 this.setState({
-                    headers: data.header
+                    headers: data.header,
+                    prevHeaders: data.header,
                 });
             }
         }).catch((err) => {
@@ -50,8 +59,8 @@ class TrainContent extends Component {
         let objArray = [];
         let targetType = "";
 
-        if (this.state.headers.length) {
-            this.state.headers.map((value) => {
+        if (this.state.prevHeaders.length) {
+            this.state.prevHeaders.map((value) => {
                 if (value.header !== option.value) {
                     objArray.push({value: value.header, label: value.header});
                 } else {
@@ -100,7 +109,31 @@ class TrainContent extends Component {
             })
         }
 
-        this.setState({filterModels: option, paramValues: paramValues});
+        let group = "";
+
+        if (option.length > 0) {
+            group = option[0].group;
+        }
+
+        let new_headers = [];
+
+        if (group === "Classification") {
+            this.state.headers.map((value) => {
+                if (value.type === "StringType") {
+                    new_headers.push(value);
+                }
+            })
+        } else if (group === "Regression") {
+            this.state.headers.map((value) => {
+                if (value.type !== "StringType") {
+                    new_headers.push(value);
+                }
+            })
+        } else {
+            new_headers = this.state.prevHeaders;
+        }
+
+        this.setState({filterModels: option, paramValues: paramValues, modelGroup: group, headers: new_headers});
     }
 
     trainModel() {
@@ -144,7 +177,63 @@ class TrainContent extends Component {
                                 obj[key][new_key] = data[keys[index]]['prediction']['docs'][key];
                             }
                         }
-                        this.setState({predictionResults: data, testData: obj, predictionHeaders: headers, showResults: true, loader: false});
+                        let category = [];
+                        let fMeasureValues = [];
+                        let precisionValues = [];
+                        let accuracyValues = [];
+                        let recallValues = [];
+                        let model_keys = Object.keys(data).sort();
+
+                        for (let key in model_keys) {
+                            category.push({"label": model_keys[key]});
+                            fMeasureValues.push({"value": data[model_keys[key]]["fMeasure"]});
+                            precisionValues.push({"value": data[model_keys[key]]["precision"]});
+                            accuracyValues.push({"value": data[model_keys[key]]["accuracy"]});
+                            recallValues.push({"value": data[model_keys[key]]["recall"]});
+                        }
+
+                        const chartData = {
+                            type: 'mscolumn2d',// The chart type
+                            width: '700', // Width of the chart
+                            height: '400', // Height of the chart
+                            dataFormat: 'json', // Data type
+                            dataSource: {
+                                // Chart Configuration
+                                "chart": {
+                                    "caption": "Prediction Visualization",
+                                    // "subCaption": "In MMbbl = One Million barrels",
+                                    "xAxisName": "Models",
+                                    "yAxisName": "Metrics",
+                                    "numberSuffix": "K",
+                                    "theme": "fusion",
+                                },
+                                // Chart Data
+                                "categories": [
+                                    {
+                                        "category": category
+                                    }
+                                ],
+                                "dataset": [
+                                    {
+                                        "seriesname": "fMeasure",
+                                        "data": fMeasureValues,
+                                    },
+                                    {
+                                        "seriesname": "Precision",
+                                        "data": precisionValues,
+                                    },
+                                    {
+                                        "seriesname": "Accuracy",
+                                        "data": accuracyValues,
+                                    },
+                                    {
+                                        "seriesname": "Recall",
+                                        "data": recallValues
+                                    }
+                                ],
+                            }
+                        };
+                        this.setState({predictionResults: data, testData: obj, predictionHeaders: headers, showResults: true, showPredictionChart: true, chartData, loader: false});
                     }
                 }).catch((err) => {
                     console.log(err);
@@ -163,15 +252,69 @@ class TrainContent extends Component {
                 options.push({value: value.header, label: value.header});
             })
         }
-
-        let paramOptions = [];
+        
+        let classificationModels = [];
+        let regressionModels = [];
+        let clusteringModels = [];
 
         PARAMS.models.forEach((item) => {
-            paramOptions.push({value: item, label: item})
+
+            if (item !== "K-Means" && item !== "Bisecting K-Means" && item !== "Naive Bayes") {
+                regressionModels.push({label: item, value: item, group: "Regression"});
+            }
+            if (item !== "K-Means" && item !== "Bisecting K-Means") {
+                classificationModels.push({label: item, value: item, group: "Classification"});
+            } else if (item === "K-Means" || item === "Bisecting K-Means") {
+                clusteringModels.push({label: item, value: item, group: "Clustering"});
+            }
         });
+
+        let paramOptions = [
+            {
+                label: "Classification",
+                options: classificationModels,
+            },
+            {
+                label: "Clustering",
+                options: clusteringModels
+            },
+            {
+                label: "Regression",
+                options: regressionModels
+            }
+        ];
 
         return(
             <div className={"col-md-12 no-pad bottom-pad"}>
+                <div className={"col-md-12 no-pad"}>
+                    <span className={"custom-h2-header"}>Model Selection</span>
+                </div>
+                <div className={"form-group col-md-12 no-pad medium-top-pad"}>
+                    <span className={"col-md-12 no-pad medium-bottom-pad"}><strong>Models</strong></span>
+                    <div className={"col-md-12 no-pad"}>
+                        <Select
+                            className={"col-md-4 no-pad"}
+                            value={this.state.filterModels}
+                            onChange={this.updateModelParams}
+                            options={paramOptions}
+                            isMulti
+                            isSearchable
+                            name={"models"}
+                            classNamePrefix={"filter-options"}
+                        />
+                    </div>
+                    {/*{this.state.filterModels ?*/}
+                        {/*<p className={"col-md-4 no-pad props-helper-text medium-top-pad"}>*/}
+                            {/*You have selected a {this.state.modelGroup} model and {this.state.targetType === "categorical" ?*/}
+                            {/*"Classification" : "Regression"*/}
+                        {/*} model will be built, which will predict the target from the classes in the selected column.*/}
+                        {/*</p>*/}
+                        {/*: null*/}
+                    {/*}*/}
+                </div>
+
+                <hr className={"col-md-12 custom-hr"} />
+
                 <div className={"col-md-12 no-pad"}>
                     <span className={"custom-h2-header"}>Feature Selection</span>
                 </div>
@@ -226,7 +369,7 @@ class TrainContent extends Component {
                     <span className={"col-md-12 no-pad medium-bottom-pad"}><strong>Train Data Split</strong></span>
                     <div className={"col-md-12 no-pad medium-bottom-pad"}>
                         <p className={"col-md-4 no-pad"}>
-                            You can choose any number between 1-100. Make sure the sum of train and test split adds upto 100. Suggested number is 60.
+                            You can choose any number between 1-100. Make sure the sum of train and test split adds upto 100. Suggested number is 70.
                         </p>
                     </div>
                     <div className={"col-md-4 no-pad"}>
@@ -237,41 +380,12 @@ class TrainContent extends Component {
                     <span className={"col-md-12 no-pad medium-bottom-pad"}><strong>Test Data Split</strong></span>
                     <div className={"col-md-12 no-pad medium-bottom-pad"}>
                         <p className={"col-md-4 no-pad"}>
-                            You can choose any number between 1-100. Make sure the sum of train and test split adds upto 100. Suggested number is 40.
+                            You can choose any number between 1-100. Make sure the sum of train and test split adds upto 100. Suggested number is 30.
                         </p>
                     </div>
                     <div className={"col-md-4 no-pad"}>
                         <input className={"form-control no-full-width-input input-sm"} type={"text"} onChange={(e) => this.setState({testSplit: e.target.value})}/>
                     </div>
-                </div>
-
-                <hr className={"col-md-12 custom-hr"} />
-
-                <div className={"col-md-12 no-pad"}>
-                    <span className={"custom-h2-header"}>Model Selection</span>
-                </div>
-                <div className={"form-group col-md-12 no-pad medium-top-pad"}>
-                    <span className={"col-md-12 no-pad medium-bottom-pad"}><strong>Models</strong></span>
-                    <div className={"col-md-12 no-pad"}>
-                        <Select
-                            className={"col-md-4 no-pad"}
-                            value={this.state.filterModels}
-                            onChange={this.updateModelParams}
-                            options={paramOptions}
-                            isMulti
-                            isSearchable
-                            name={"models"}
-                            classNamePrefix={"filter-options"}
-                        />
-                    </div>
-                    {this.state.filterColumns ?
-                        <p className={"col-md-4 no-pad props-helper-text medium-top-pad"}>
-                            The selected column is {this.state.targetType} data and a {this.state.targetType === "categorical" ?
-                            "Classification" : "Regression"
-                        } model will be built, which will predict the target from the classes in the selected column.
-                        </p>
-                        : null
-                    }
                 </div>
 
                 <div className={"col-md-12"}>
@@ -303,31 +417,37 @@ class TrainContent extends Component {
                         <div className={"col-md-12 medium-top-pad"}>
                             <button className={"action-small-btn"} onClick={() => this.setState({viewPredictedData: true})}>View Predicted Data</button>
                         </div>
-                        <div className={"col-md-12 no-pad top-pad prediction-div"}>
-                            {this.state.filterModels.map((model, index) => (
-                                <div key={index} className={"col-md-3"}>
-                                    <h3 className={"less-margin text-center"} >{model.value}</h3>
-                                    <div className={"col-md-12 no-pad"}>
-                                        <label className={"col-md-4 no-pad"}>fMeasure:</label>
-                                        <span className={"col-md-8 no-pad"}>{this.state.predictionResults[model.value.toLowerCase().split(" ").join("_")]['fMeasure']}</span>
-                                    </div>
-                                    <div className={"col-md-12 no-pad"}>
-                                        <label className={"col-md-4 no-pad"}>Accuracy:</label>
-                                        <span className={"col-md-8 no-pad"}>{this.state.predictionResults[model.value.toLowerCase().split(" ").join("_")]['accuracy']}</span>
-                                    </div>
-                                    <div className={"col-md-12 no-pad"}>
-                                        <label className={"col-md-4 no-pad"}>Precision:</label>
-                                        <span className={"col-md-8 no-pad"}>{this.state.predictionResults[model.value.toLowerCase().split(" ").join("_")]['precision']}</span>
-                                    </div>
-                                    <div className={"col-md-12 no-pad"}>
-                                        <label className={"col-md-4 no-pad"}>Recall:</label>
-                                        <span className={"col-md-8 no-pad"}>{this.state.predictionResults[model.value.toLowerCase().split(" ").join("_")]['recall']}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        {/*<div className={"col-md-12 no-pad top-pad prediction-div"}>*/}
+                            {/*{this.state.filterModels.map((model, index) => (*/}
+                                {/*<div key={index} className={"col-md-3"}>*/}
+                                    {/*<h3 className={"less-margin text-center"} >{model.value}</h3>*/}
+                                    {/*<div className={"col-md-12 no-pad"}>*/}
+                                        {/*<label className={"col-md-4 no-pad"}>fMeasure:</label>*/}
+                                        {/*<span className={"col-md-8 no-pad"}>{this.state.predictionResults[model.value.toLowerCase().split(" ").join("_")]['fMeasure']}</span>*/}
+                                    {/*</div>*/}
+                                    {/*<div className={"col-md-12 no-pad"}>*/}
+                                        {/*<label className={"col-md-4 no-pad"}>Accuracy:</label>*/}
+                                        {/*<span className={"col-md-8 no-pad"}>{this.state.predictionResults[model.value.toLowerCase().split(" ").join("_")]['accuracy']}</span>*/}
+                                    {/*</div>*/}
+                                    {/*<div className={"col-md-12 no-pad"}>*/}
+                                        {/*<label className={"col-md-4 no-pad"}>Precision:</label>*/}
+                                        {/*<span className={"col-md-8 no-pad"}>{this.state.predictionResults[model.value.toLowerCase().split(" ").join("_")]['precision']}</span>*/}
+                                    {/*</div>*/}
+                                    {/*<div className={"col-md-12 no-pad"}>*/}
+                                        {/*<label className={"col-md-4 no-pad"}>Recall:</label>*/}
+                                        {/*<span className={"col-md-8 no-pad"}>{this.state.predictionResults[model.value.toLowerCase().split(" ").join("_")]['recall']}</span>*/}
+                                    {/*</div>*/}
+                                {/*</div>*/}
+                            {/*))}*/}
+                        {/*</div>*/}
                     </>
                     : null
+                }
+                {this.state.showPredictionChart ?
+                    <div className={"col-md-6 col-md-offset-3 no-pad"}>
+                        <ReactFC {...this.state.chartData}/>
+                    </div>
+                     : null
                 }
             </div>
         )

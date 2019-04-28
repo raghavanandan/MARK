@@ -781,7 +781,7 @@ public class ApiController {
 				System.out.println("-----<>-----"+model.get("model"));
 				predictions.show();
 
-				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select(outputCol+"Index", "prediction"));
+				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select("label", "prediction"));
 
 				System.out.println(metrics.accuracy());
 				System.out.println(metrics.fMeasure());
@@ -855,7 +855,7 @@ public class ApiController {
 				System.out.println("-----<>-----"+model.get("model"));
 				predictions.show();
 
-				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select(outputCol+"Index", "prediction"));
+				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select("label", "prediction"));
 
 				System.out.println(metrics.accuracy());
 				System.out.println(metrics.fMeasure());
@@ -899,7 +899,7 @@ public class ApiController {
 				System.out.println("-----<>-----"+model.get("model"));
 				predictions.show();
 
-				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select(outputCol+"Index", "prediction"));
+				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select("label", "prediction"));
 
 				System.out.println(metrics.accuracy());
 				System.out.println(metrics.fMeasure());
@@ -940,7 +940,7 @@ public class ApiController {
 				System.out.println("-----<>-----"+model.get("model"));
 				predictions.show();
 
-				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select(outputCol+"Index", "prediction"));
+				MulticlassMetrics metrics = new MulticlassMetrics(predictions.select("label", "prediction"));
 
 				System.out.println(metrics.accuracy());
 				System.out.println(metrics.fMeasure());

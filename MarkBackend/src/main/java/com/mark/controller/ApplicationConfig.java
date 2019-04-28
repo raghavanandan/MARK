@@ -60,6 +60,7 @@ public class ApplicationConfig {
     @Bean
     public JavaSparkContext javaSparkContext() {
     	jsc = new JavaSparkContext(sparkConf());
+    	jsc.setLogLevel("ERROR");
         return jsc;
     }
 
@@ -70,6 +71,7 @@ public class ApplicationConfig {
                 .sparkContext(javaSparkContext().sc())
                 .appName("Java Spark SQL basic example")
                 .getOrCreate();
+        		
         return spark;
     }
 

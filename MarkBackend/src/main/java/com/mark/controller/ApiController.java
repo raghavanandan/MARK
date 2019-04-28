@@ -500,12 +500,14 @@ public class ApiController {
 		List<String> categorical = new ArrayList<>();
 
 		List<String> numerical = new ArrayList<>();
-
+		
+		System.out.println("before");
+		
 
 		if (currentDf == null) {
 			currentDf = masterDf;
 		}
-
+		currentDf.show();
 
 		for(Tuple2<String, String> tup: currentDf.dtypes()){
 			if(tup._1 == modelSelection.getOutputCol())
@@ -514,10 +516,10 @@ public class ApiController {
 
 			if(tup._2 == "StringType") {
 				categorical.add(tup._1);
-				currentDf = currentDf.withColumn("_" + tup._1 , currentDf.col(tup._1).cast(DataTypes.DoubleType)).drop(tup._1).withColumnRenamed("_" + tup._1, tup._1);
 			}
 			else {
 				numerical.add(tup._1);
+				currentDf = currentDf.withColumn("_" + tup._1 , currentDf.col(tup._1).cast(DataTypes.DoubleType)).drop(tup._1).withColumnRenamed("_" + tup._1, tup._1);
 			}
 
 		}
@@ -540,6 +542,8 @@ public class ApiController {
 
 		VectorAssembler assembler = new VectorAssembler().setInputCols(assemblerInputs.toArray(new String[0])).setOutputCol("features");
 		stages.add(assembler);
+		System.out.println("after");
+		currentDf.show();
 
 		Pipeline partialPipeline = new Pipeline().setStages(stages.toArray(new PipelineStage[0]));
 

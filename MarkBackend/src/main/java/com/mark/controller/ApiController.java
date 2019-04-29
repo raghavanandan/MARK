@@ -514,9 +514,9 @@ public class ApiController {
 
 
 		Dataset<Row> f_df = currentDf;
-		if (!modelSelection.getFeatureCol().get(0).equals("ALL")) {
-			String[] fArr = new String[modelSelection.getFeatureCol().size()];
-			modelSelection.getFeatureCol().toArray();
+		if (!modelSelection.getFeatureCol().get(0).equals("All")) {
+			modelSelection.getFeatureCol().add((modelSelection.getOutputCol()));
+			String[] fArr = modelSelection.getFeatureCol().toArray(new String[0]);
 			f_df = currentDf.selectExpr(fArr);
 		}
 
@@ -612,9 +612,9 @@ public class ApiController {
 	private Dataset<Row> prepareRegressionModel(ModelSelection modelSelection) {
 		// TODO Auto-generated method stub
 		Dataset<Row> f_df = currentDf;
-		if (!modelSelection.getFeatureCol().get(0).equals("ALL")) {
-			String[] fArr = new String[modelSelection.getFeatureCol().size()];
-			modelSelection.getFeatureCol().toArray();
+		if (!modelSelection.getFeatureCol().get(0).equals("All")) {
+			modelSelection.getFeatureCol().add((modelSelection.getOutputCol()));
+			String[] fArr = modelSelection.getFeatureCol().toArray(new String[0]);
 			f_df = currentDf.selectExpr(fArr);
 		}
 		f_df = f_df.withColumn("label", f_df.col(modelSelection.getOutputCol()));
@@ -944,7 +944,7 @@ public class ApiController {
 
 			}
 
-			if (model.get("model").equals("random_forest") && model_type.equals("classification")){
+			if (model.get("model").equals("random_forests") && model_type.equals("classification")){
 
 
 				Dataset<Row> predictions = null;
@@ -1211,7 +1211,7 @@ public class ApiController {
 			}
 
 
-			if (model.get("model").equals("random_forest") && model_type.equals("regression")){
+			if (model.get("model").equals("random_forests") && model_type.equals("regression")){
 
 				Dataset<Row> predictions = null;
 

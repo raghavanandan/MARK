@@ -700,31 +700,34 @@ public class ApiController {
 	public ResponseEntity<JSONObject> updateMissingValues(@RequestBody MissingData missingData){
 		
 		if (!missingData.getOldColumnName().equals(missingData.getNewColumnName())) {
-			
-			masterDf.withColumnRenamed(missingData.getOldColumnName(), missingData.getNewColumnName());
-			currentDf.withColumnRenamed(missingData.getOldColumnName(), missingData.getNewColumnName());
+			System.out.println("Updating column $$$$$$$$");
+			masterDf = masterDf.withColumnRenamed(missingData.getOldColumnName(), missingData.getNewColumnName());
+			currentDf = currentDf.withColumnRenamed(missingData.getOldColumnName(), missingData.getNewColumnName());
 			
 		}
 		
 		if (missingData.getValue().trim().length()!=0) {
-			
+			System.out.println("Updating value $$$$$$$");
 			String[] c = new String[1];
 			c[0] = missingData.getNewColumnName();
 			
 			String type = Utils.getColumnType(masterDf.dtypes(), missingData.getNewColumnName());
-			
+			System.out.println("TYpe $$$$$$$ " + type);
 			switch (type) {
 			case "DoubleType":
-				masterDf.na().fill(Double.valueOf(missingData.getValue()) ,c);
+				masterDf = masterDf.na().fill(Double.valueOf(missingData.getValue()) ,c);
+				currentDf = currentDf.na().fill(Double.valueOf(missingData.getValue()) ,c);
 				break;
 			
 			case "StringType":
-				masterDf.na().fill(missingData.getValue() ,c);
+				masterDf = masterDf.na().fill(missingData.getValue() ,c);
+				currentDf = currentDf.na().fill(missingData.getValue() ,c);
 				break;
 				
 				
 			case "LongType":
-				masterDf.na().fill(Long.valueOf(missingData.getValue()) ,c);
+				masterDf = masterDf.na().fill(Long.valueOf(missingData.getValue()) ,c);
+				currentDf = currentDf.na().fill(Long.valueOf(missingData.getValue()) ,c);
 				break;
 
 			default:

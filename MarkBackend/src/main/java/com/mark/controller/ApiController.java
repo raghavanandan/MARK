@@ -15,6 +15,7 @@ import org.apache.spark.ml.Pipeline;
 import org.apache.spark.ml.PipelineModel;
 import org.apache.spark.ml.PipelineStage;
 import org.apache.spark.ml.Transformer;
+import org.apache.spark.ml.classification.BinaryLogisticRegressionSummary;
 import org.apache.spark.ml.classification.DecisionTreeClassificationModel;
 import org.apache.spark.ml.classification.DecisionTreeClassifier;
 import org.apache.spark.ml.classification.GBTClassificationModel;
@@ -32,10 +33,17 @@ import org.apache.spark.ml.feature.StringIndexer;
 import org.apache.spark.ml.feature.StringIndexerModel;
 import org.apache.spark.ml.feature.VectorAssembler;
 import org.apache.spark.ml.param.ParamMap;
+import org.apache.spark.ml.regression.DecisionTreeRegressionModel;
+import org.apache.spark.ml.regression.DecisionTreeRegressor;
+import org.apache.spark.ml.regression.LinearRegression;
+import org.apache.spark.ml.regression.LinearRegressionModel;
+import org.apache.spark.ml.regression.RandomForestRegressionModel;
+import org.apache.spark.ml.regression.RandomForestRegressor;
 import org.apache.spark.ml.tuning.CrossValidator;
 import org.apache.spark.ml.tuning.CrossValidatorModel;
 import org.apache.spark.ml.tuning.ParamGridBuilder;
 import org.apache.spark.mllib.evaluation.MulticlassMetrics;
+import org.apache.spark.mllib.evaluation.RegressionMetrics;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -57,12 +65,13 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.google.gson.Gson;
 import com.mark.pojo.DT;
 import com.mark.pojo.FramePojo;
 import com.mark.pojo.LR;
+import com.mark.pojo.LinearR;
 import com.mark.pojo.ModelSelection;
 import com.mark.pojo.NB;
+import com.mark.pojo.RF;
 import com.mark.pojo.Response;
 import com.mark.pojo.StringParser;
 import com.mark.storage.Mongo;
@@ -304,6 +313,7 @@ public class ApiController {
 		for (FramePojo fPojo : frameData.keySet()) {
 			Dataset<Row> fdf = frameData.get(fPojo);
 			masterDf = fdf;
+			currentDf = masterDf;
 			List<Row> x = fdf.limit(limit).collectAsList();
 			JSONObject js = Utils.convertFrameToJson2(x);
 			//		System.out.println(js);
@@ -325,7 +335,7 @@ public class ApiController {
 
 	@RequestMapping("select-df")
 	public ResponseEntity<JSONObject> selectDataFrame(@RequestParam("columns") List<String> columns) {
-		
+
 		JavaSparkContext sc = JavaSparkContext.fromSparkContext(sparkSession.sparkContext());
 
 		if (currentDf ==null) {
@@ -333,8 +343,8 @@ public class ApiController {
 		}
 
 		String[] exp = new String[columns.size()];
-		
-		
+
+
 		int i=0;
 		for (String s :columns) {
 			System.out.println(s);
@@ -345,10 +355,10 @@ public class ApiController {
 		currentDf.show();
 
 		currentDf = currentDf.selectExpr(exp);
-		
-		
+
+
 		System.out.println("After filter select-df");
-		
+
 		currentDf.show();
 
 		List<Row> x = currentDf.limit(limit).collectAsList();
@@ -463,10 +473,10 @@ public class ApiController {
 			js.put("missing_count", c);
 			long distinct = currentDf.select(currentDf.col(columns.get(0))).distinct().count();
 			js.put("distinct_count", distinct);
-			
+
 			Dataset<Row> mode = currentDf.groupBy(currentDf.col(columns.get(0))).count().sort(functions.desc("count")).limit(1).select(columns.get(0));
 			Object _mode = ((GenericRowWithSchema)mode.first()).values()[0];
-			
+
 			js.put("mode", _mode);
 		}
 
@@ -484,12 +494,7 @@ public class ApiController {
 	}
 
 
-	@RequestMapping(value="prepare-model",  method = RequestMethod.POST, produces =MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<JSONObject> prepareModel(@RequestBody ModelSelection modelSelection){
-
-		System.out.println("ModelData "+modelSelection);
-
-		resetModel();
+	private static Dataset<Row> prepareClassficationModel(ModelSelection modelSelection) {
 
 		StringIndexer tr = new StringIndexer().setInputCol(modelSelection.getOutputCol()).setOutputCol("label");
 
@@ -500,14 +505,23 @@ public class ApiController {
 		List<String> categorical = new ArrayList<>();
 
 		List<String> numerical = new ArrayList<>();
-		
-		
+
+
 
 		if (currentDf == null) {
 			currentDf = masterDf;
 		}
 
-		for(Tuple2<String, String> tup: currentDf.dtypes()){
+
+		Dataset<Row> f_df = currentDf;
+		if (!modelSelection.getFeatureCol().get(0).equals("ALL")) {
+			String[] fArr = new String[modelSelection.getFeatureCol().size()];
+			modelSelection.getFeatureCol().toArray();
+			f_df = currentDf.selectExpr(fArr);
+		}
+
+
+		for(Tuple2<String, String> tup: f_df.dtypes()){
 			if(tup._1.equals(modelSelection.getOutputCol())) {
 				continue;
 			}
@@ -517,7 +531,7 @@ public class ApiController {
 			}
 			else {
 				numerical.add(tup._1);
-				currentDf = currentDf.withColumn("_" + tup._1 , currentDf.col(tup._1).cast(DataTypes.DoubleType)).drop(tup._1).withColumnRenamed("_" + tup._1, tup._1);
+				f_df = f_df.withColumn("_" + tup._1 , f_df.col(tup._1).cast(DataTypes.DoubleType)).drop(tup._1).withColumnRenamed("_" + tup._1, tup._1);
 			}
 
 		}
@@ -538,16 +552,16 @@ public class ApiController {
 			assemblerInputs.add(str + "classVec");
 		}
 
-//		System.out.println(categorical);
-//		System.out.println(numerical);
+		//		System.out.println(categorical);
+		//		System.out.println(numerical);
 		VectorAssembler assembler = new VectorAssembler().setInputCols(assemblerInputs.toArray(new String[0])).setOutputCol("features");
 		stages.add(assembler);
 
 		Pipeline partialPipeline = new Pipeline().setStages(stages.toArray(new PipelineStage[0]));
 
-		pipelineModel = partialPipeline.fit(currentDf);
+		pipelineModel = partialPipeline.fit(f_df);
 
-		Dataset<Row> preppedDataDF = pipelineModel.transform(currentDf);
+		Dataset<Row> preppedDataDF = pipelineModel.transform(f_df);
 
 		System.out.println(modelSelection.getTestSplit()/100.0);
 
@@ -559,26 +573,95 @@ public class ApiController {
 		testing = ds[1];
 
 		preppedDataDF.show();
+		return f_df;
+	}
+
+
+	@RequestMapping(value="prepare-model",  method = RequestMethod.POST, produces =MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<JSONObject> prepareModel(@RequestBody ModelSelection modelSelection){
+
+		System.out.println("ModelData "+modelSelection);
+
+		resetModel();
+
+
+		JSONObject res = new JSONObject();
+		Dataset<Row> f_df = null;
+		if (modelSelection.getModel().equals("classification")) {
+			f_df  = prepareClassficationModel(modelSelection);
+		}
+
+		if (modelSelection.getModel().equals("regression")) {
+			f_df  = prepareRegressionModel(modelSelection);
+		}
 
 
 		List<Row> training_json = training.limit(limit).collectAsList();
-		JSONObject training_set = Utils.convertFrameToJson2Cols(training_json, currentDf.columns());
+		JSONObject training_set = Utils.convertFrameToJson2Cols(training_json, f_df.columns());
 		List<Row> testing_json = testing.limit(limit).collectAsList();
-		JSONObject testing_set = Utils.convertFrameToJson2Cols(testing_json, currentDf.columns());
-
-		JSONObject res = new JSONObject();
-
+		JSONObject testing_set = Utils.convertFrameToJson2Cols(testing_json, f_df.columns());
 		res.put("training_set", training_set);
 		res.put("testing_set", testing_set);
-
-		Tuple2<String, String>[] dtypes = currentDf.dtypes();
-
+		Tuple2<String, String>[] dtypes = f_df.dtypes();
 		JSONArray header = Utils.getTypes(dtypes);
-
 		res.put("header", header);
-
 		return new ResponseEntity<>(res, HttpStatus.OK);
 
+	}
+
+	private Dataset<Row> prepareRegressionModel(ModelSelection modelSelection) {
+		// TODO Auto-generated method stub
+		Dataset<Row> f_df = currentDf;
+		if (!modelSelection.getFeatureCol().get(0).equals("ALL")) {
+			String[] fArr = new String[modelSelection.getFeatureCol().size()];
+			modelSelection.getFeatureCol().toArray();
+			f_df = currentDf.selectExpr(fArr);
+		}
+		f_df = f_df.withColumn("label", f_df.col(modelSelection.getOutputCol()));
+		f_df = f_df.withColumn("labelTmp", f_df.col("label").cast(DataTypes.DoubleType)).drop("label").withColumnRenamed("labelTmp", "label");
+		ArrayList<PipelineStage> stages = new ArrayList<>();
+		List<String> categorical = new ArrayList<>();
+		List<String> numerical = new ArrayList<>();
+		for(Tuple2<String, String> tup: f_df.dtypes())
+		{
+			if(tup._1 == "label" || tup._1 == "density") {
+				continue;
+			}
+			if(tup._2 == "StringType")
+				categorical.add(tup._1);
+			else 
+			{
+				f_df = f_df.withColumn("_" + tup._1 , f_df.col(tup._1).cast(DataTypes.DoubleType)).drop(tup._1).withColumnRenamed("_" + tup._1, tup._1);
+				numerical.add(tup._1);
+			}
+		}
+
+		for(String str: categorical){
+			StringIndexer strIndexer = new StringIndexer().setInputCol(str).setOutputCol(str + "Index");
+			OneHotEncoder encoder = new OneHotEncoder().setInputCol(strIndexer.getOutputCol()).setOutputCol(str + "classVec");
+			stages.add(strIndexer);
+			stages.add(encoder);
+		}
+		List<String> assemblerInputs = new ArrayList<>(numerical);
+		for(String str: categorical) {
+			assemblerInputs.add(str + "classVec");
+		}
+		VectorAssembler assembler = new VectorAssembler().setInputCols(assemblerInputs.toArray(new String[0])).setOutputCol("features");
+		stages.add(assembler);
+		Pipeline partialPipeline = new Pipeline().setStages(stages.toArray(new PipelineStage[0]));
+
+		pipelineModel = partialPipeline.fit(f_df);
+
+		Dataset<Row> preppedDataDF = pipelineModel.transform(f_df);
+		System.out.println(modelSelection.getTestSplit()/100.0);
+		System.out.println(modelSelection.getTrainSplit()/100.0);
+		Dataset<Row>[] ds = preppedDataDF.randomSplit(new double[] {modelSelection.getTrainSplit()/100.0, modelSelection.getTestSplit()/100.0});
+
+		training = ds[0];
+		testing = ds[1];
+
+		preppedDataDF.show();
+		return f_df;
 	}
 
 	@RequestMapping(value="predict")
@@ -591,8 +674,12 @@ public class ApiController {
 		NaiveBayesModel nbModel= null;
 		RandomForestClassificationModel rfModel = null;
 		GBTClassificationModel gbtModel = null;
+		LinearRegressionModel linearRegModel = null;
+		DecisionTreeRegressionModel dtRegModel = null;
+		RandomForestRegressionModel rfRegModel = null;
 
 		String outputCol = (String) modelJson.get("outputCol");
+		String model_type = (String) modelJson.get("model");
 
 		List<Map<String, Object>> it = (List<Map<String, Object>>) modelJson.get("data");
 
@@ -602,11 +689,13 @@ public class ApiController {
 
 
 
-			if (model.get("model").equals("logistic_regression")){
+			if (model.get("model").equals("logistic_regression") && model_type.equals("classification")){
 
 				Dataset<Row> predictions = null;
 
 				String best_params = "";
+
+				JSONObject hyper_tuning = new JSONObject();
 
 				if (model.get("hyper_params")!=null) {
 
@@ -620,6 +709,7 @@ public class ApiController {
 
 					System.out.println("LR POJO -> "+lrPojo);
 					MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
+					mce.setMetricName((String) model.get("metric"));
 					LogisticRegression lr = new LogisticRegression();
 					ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(lr.elasticNetParam(), lrPojo.getElasticNetParam()).addGrid(lr.regParam(), lrPojo.getRegParam()).addGrid(lr.maxIter(), lrPojo.getMaxIter());
 					ParamMap[] pMap = paramGrid.build();
@@ -629,10 +719,22 @@ public class ApiController {
 					System.out.println("best model params "+cvm.bestModel().explainParams());
 					best_params = cvm.bestModel().explainParams();
 					predictions = cvm.transform(testing);
+
+
+					double best_metric_training = 0.0;
+
 					for(double d : cvm.avgMetrics()) {
+						if (d > best_metric_training) {
+							best_metric_training = d;
+						}
 						System.out.println("mteric "+d);
 					}
 					System.out.println(mce.evaluate(predictions));
+					double best_metric_testing =mce.evaluate(predictions);
+					System.out.println(mce.getMetricName());
+					hyper_tuning.put("best_metric_training", best_metric_training);
+					hyper_tuning.put("best_metric_testing", best_metric_testing);
+					hyper_tuning.put("metric", mce.getMetricName());
 				}
 				else {
 					lrModel = new LogisticRegression().fit(training);
@@ -656,8 +758,8 @@ public class ApiController {
 				double[] cm = metrics.confusionMatrix().toArray();
 				double sum = cm[0] + cm[1] + cm[2] + cm[3];
 				double acc=(cm[0]+cm[3])/sum;
-		     	double precision=(cm[0])/(cm[0]+cm[1]);
-	 			double recall=(cm[0])/(cm[0]+cm[2]);
+				double precision=(cm[0])/(cm[0]+cm[1]);
+				double recall=(cm[0])/(cm[0]+cm[2]);
 				double fMeasure = (2*(precision*recall))/(precision+recall);
 
 
@@ -671,13 +773,24 @@ public class ApiController {
 				temp_res.put("precision", df2.format(precision));
 				temp_res.put("recall", df2.format(recall));
 				temp_res.put("best_params", best_params);
+				temp_res.put("hyper_tuning", hyper_tuning);
 
+
+
+				if (model.get("hyper_params") ==null) {
+					BinaryLogisticRegressionSummary bsummary = (BinaryLogisticRegressionSummary)lrModel.summary();
+					bsummary.roc().show();
+					System.out.println(bsummary.areaUnderROC());
+
+					JSONObject x = Utils.convertFrameToJson2ColsRoc(bsummary.roc().collectAsList(), bsummary.roc().columns());
+					temp_res.put("roc_data", x);
+				}
 				res.put(model.get("model"), temp_res);
 			}
 
 
-			
-			if (model.get("model").equals("decision_tree")){
+
+			if (model.get("model").equals("decision_tree") && model_type.equals("classification")){
 
 
 				Dataset<Row> predictions = null;
@@ -736,8 +849,8 @@ public class ApiController {
 				double[] cm = metrics.confusionMatrix().toArray();
 				double sum = cm[0] + cm[1] + cm[2] + cm[3];
 				double acc=(cm[0]+cm[3])/sum;
-		     	double precision=(cm[0])/(cm[0]+cm[1]);
-	 			double recall=(cm[0])/(cm[0]+cm[2]);
+				double precision=(cm[0])/(cm[0]+cm[1]);
+				double recall=(cm[0])/(cm[0]+cm[2]);
 				double fMeasure = (2*(precision*recall))/(precision+recall);
 
 
@@ -757,7 +870,7 @@ public class ApiController {
 
 
 			}
-			if (model.get("model").equals("naive_bayes")){
+			if (model.get("model").equals("naive_bayes") && model_type.equals("classification")){
 
 				Dataset<Row> predictions = null;
 
@@ -809,8 +922,8 @@ public class ApiController {
 				double[] cm = metrics.confusionMatrix().toArray();
 				double sum = cm[0] + cm[1] + cm[2] + cm[3];
 				double acc=(cm[0]+cm[3])/sum;
-		     	double precision=(cm[0])/(cm[0]+cm[1]);
-	 			double recall=(cm[0])/(cm[0]+cm[2]);
+				double precision=(cm[0])/(cm[0]+cm[1]);
+				double recall=(cm[0])/(cm[0]+cm[2]);
 				double fMeasure = (2*(precision*recall))/(precision+recall);
 
 
@@ -831,9 +944,43 @@ public class ApiController {
 
 			}
 
-			if (model.get("model").equals("random_forest")){
-				rfModel = new RandomForestClassifier().fit(training);
-				Dataset<Row> predictions = rfModel.transform(testing);
+			if (model.get("model").equals("random_forest") && model_type.equals("classification")){
+
+
+				Dataset<Row> predictions = null;
+
+				String best_params = "";
+
+				if (model.get("hyper_params")!=null) {
+
+					Map<String, String> hyperParams = (Map<String, String>) model.get("hyper_params");
+
+					RF rfPojo = new RF();
+					rfPojo.setMaxBins(hyperParams.get("maxBins"));
+					rfPojo.setMaxDepth(hyperParams.get("maxDepth"));
+					rfPojo.setMinInfoGain(hyperParams.get("minInfoGain"));
+					rfPojo.setNumTrees(hyperParams.get("numTrees"));
+
+					System.out.println("RF"+rfPojo);
+					MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
+					RandomForestClassifier rf = new RandomForestClassifier();
+					ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(rf.maxBins(), rfPojo.getMaxBins()).addGrid(rf.maxDepth(), rfPojo.getMaxDepth()).addGrid(rf.minInfoGain(), rfPojo.getMinInfoGain()).addGrid(rf.numTrees(), rfPojo.getNumTrees());
+					ParamMap[] pMap = paramGrid.build();
+					CrossValidator cv = new CrossValidator().setNumFolds(Integer.valueOf(String.valueOf(model.get("kfold")))).setEstimator(rf).setEstimatorParamMaps(pMap).setEvaluator(mce);
+					CrossValidatorModel cvm = cv.fit(training);
+					//System.out.println("explains param "+cvm.explainParams());
+					System.out.println("best model params "+cvm.bestModel().explainParams());
+					best_params = cvm.bestModel().explainParams();
+					predictions = cvm.transform(testing);
+					for(double d : cvm.avgMetrics()) {
+						System.out.println("mteric "+d);
+					}
+					System.out.println(mce.evaluate(predictions));
+				}
+				else {
+					rfModel = new RandomForestClassifier().fit(training);
+					predictions = rfModel.transform(testing);
+				}
 				predictions.show();
 
 				Transformer[] _stages = pipelineModel.stages();
@@ -852,8 +999,8 @@ public class ApiController {
 				double[] cm = metrics.confusionMatrix().toArray();
 				double sum = cm[0] + cm[1] + cm[2] + cm[3];
 				double acc=(cm[0]+cm[3])/sum;
-		     	double precision=(cm[0])/(cm[0]+cm[1]);
-	 			double recall=(cm[0])/(cm[0]+cm[2]);
+				double precision=(cm[0])/(cm[0]+cm[1]);
+				double recall=(cm[0])/(cm[0]+cm[2]);
 				double fMeasure = (2*(precision*recall))/(precision+recall);
 
 
@@ -871,7 +1018,7 @@ public class ApiController {
 				res.put(model.get("model"), temp_res);
 			}
 
-			if (model.get("model").equals("gradient_boosted_trees")){
+			if (model.get("model").equals("gradient_boosted_trees") && model_type.equals("classification")){
 				gbtModel = new GBTClassifier().fit(training);
 				Dataset<Row> predictions = gbtModel.transform(testing);
 				predictions.show();
@@ -892,8 +1039,8 @@ public class ApiController {
 				double[] cm = metrics.confusionMatrix().toArray();
 				double sum = cm[0] + cm[1] + cm[2] + cm[3];
 				double acc=(cm[0]+cm[3])/sum;
-		     	double precision=(cm[0])/(cm[0]+cm[1]);
-	 			double recall=(cm[0])/(cm[0]+cm[2]);
+				double precision=(cm[0])/(cm[0]+cm[1]);
+				double recall=(cm[0])/(cm[0]+cm[2]);
 				double fMeasure = (2*(precision*recall))/(precision+recall);
 
 
@@ -910,13 +1057,236 @@ public class ApiController {
 				temp_res.put("best_params", "");
 				res.put(model.get("model"), temp_res);
 
+			}
 
+			if (model.get("model").equals("linear_regression") && model_type.equals("regression")){
+
+				Dataset<Row> predictions = null;
+
+				String best_params = "";
+
+				JSONObject hyper_tuning = new JSONObject();
+
+				if (model.get("hyper_params")!=null) {
+
+					Map<String, String> hyperParams = (Map<String, String>) model.get("hyper_params");
+
+					LinearR linearRPojo = new LinearR();
+					linearRPojo.setElasticNetParam(hyperParams.get("elasticNetParam"));
+					linearRPojo.setMaxIter(hyperParams.get("maxIter"));
+					linearRPojo.setTol(hyperParams.get("tol"));
+
+					System.out.println("linearRPojo POJO -> "+linearRPojo);
+					MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
+					mce.setMetricName((String) model.get("metric"));
+					LinearRegression linearRegression = new LinearRegression();
+					ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(linearRegression.elasticNetParam(), linearRPojo.getElasticNetParam()).addGrid(linearRegression.maxIter(), linearRPojo.getMaxIter()).addGrid(linearRegression.tol(), linearRPojo.getTol());
+					ParamMap[] pMap = paramGrid.build();
+					CrossValidator cv = new CrossValidator().setNumFolds(Integer.valueOf(String.valueOf(model.get("kfold")))).setEstimator(linearRegression).setEstimatorParamMaps(pMap).setEvaluator(mce);
+					CrossValidatorModel cvm = cv.fit(training);
+					//System.out.println("explains param "+cvm.explainParams());
+					System.out.println("best model params "+cvm.bestModel().explainParams());
+					best_params = cvm.bestModel().explainParams();
+					predictions = cvm.transform(testing);
+					for(double d : cvm.avgMetrics()) {
+						System.out.println("mteric "+d);
+					}
+					System.out.println(mce.evaluate(predictions));
+					double best_metric_training = 0.0;
+
+					for(double d : cvm.avgMetrics()) {
+						if (d > best_metric_training) {
+							best_metric_training = d;
+						}
+						System.out.println("mteric "+d);
+					}
+					System.out.println(mce.evaluate(predictions));
+					double best_metric_testing =mce.evaluate(predictions);
+					System.out.println(mce.getMetricName());
+					hyper_tuning.put("best_metric_training", best_metric_training);
+					hyper_tuning.put("best_metric_testing", best_metric_testing);
+					hyper_tuning.put("metric", mce.getMetricName());
+				}
+				else {
+					linearRegModel = new LinearRegression().fit(training);
+					predictions = linearRegModel.transform(testing);
+				}
+
+				predictions.show();
+				RegressionMetrics metrics = new RegressionMetrics(predictions.select("label", "prediction"));
+				System.out.println("-----<>-----"+model.get("model"));
+
+
+
+				Dataset<Row> p_orginal = predictions.select("prediction").limit(limit);
+				JSONObject p_original_json = Utils.convertFrameToJson2Single(p_orginal.collectAsList());
+
+
+				JSONObject temp_res = new JSONObject();
+				temp_res.put("prediction", p_original_json);
+				temp_res.put("mse", df2.format(metrics.meanSquaredError()));
+				temp_res.put("mae", df2.format(metrics.meanAbsoluteError()));
+				temp_res.put("rmse", df2.format(metrics.rootMeanSquaredError()));
+				temp_res.put("r2", df2.format(metrics.r2()));
+				temp_res.put("hyper_tuning", hyper_tuning);
+				temp_res.put("best_params", "");
+				res.put(model.get("model"), temp_res);
 
 			}
 
 
+			if (model.get("model").equals("decision_tree") && model_type.equals("regression")){
+
+				Dataset<Row> predictions = null;
+
+				String best_params = "";
+
+				JSONObject hyper_tuning = new JSONObject();
+
+				if (model.get("hyper_params")!=null) {
+
+					Map<String, String> hyperParams = (Map<String, String>) model.get("hyper_params");
+					DT dtPojo = new DT();
+					dtPojo.setMaxBins(hyperParams.get("maxBins"));
+					dtPojo.setMaxDepth(hyperParams.get("maxDepth"));
+					dtPojo.setMinInfoGain(hyperParams.get("minInfoGain"));
+					dtPojo.setMinInstancesperNode(hyperParams.get("minInstancesperNode"));
+
+					System.out.println("DT POJO -> "+dtPojo);
+					MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
+					mce.setMetricName((String) model.get("metric"));
+					DecisionTreeRegressor dt = new DecisionTreeRegressor();
+					ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(dt.maxBins(), dtPojo.getMaxBins()).addGrid(dt.maxDepth(), dtPojo.getMaxDepth()).addGrid(dt.minInfoGain(), dtPojo.getMinInfoGain()).addGrid(dt.minInstancesPerNode(), dtPojo.getMinInstancesperNode());
+					ParamMap[] pMap = paramGrid.build();
+					CrossValidator cv = new CrossValidator().setNumFolds(Integer.valueOf(String.valueOf(model.get("kfold")))).setEstimator(dt).setEstimatorParamMaps(pMap).setEvaluator(mce);
+					CrossValidatorModel cvm = cv.fit(training);
+					//System.out.println("explains param "+cvm.explainParams());
+					System.out.println("best model params "+cvm.bestModel().explainParams());
+					best_params = cvm.bestModel().explainParams();
+					predictions = cvm.transform(testing);
+					for(double d : cvm.avgMetrics()) {
+						System.out.println("mteric "+d);
+					}
+					System.out.println(mce.evaluate(predictions));
+					double best_metric_training = 0.0;
+
+					for(double d : cvm.avgMetrics()) {
+						if (d > best_metric_training) {
+							best_metric_training = d;
+						}
+						System.out.println("mteric "+d);
+					}
+					System.out.println(mce.evaluate(predictions));
+					double best_metric_testing =mce.evaluate(predictions);
+					System.out.println(mce.getMetricName());
+					hyper_tuning.put("best_metric_training", best_metric_training);
+					hyper_tuning.put("best_metric_testing", best_metric_testing);
+					hyper_tuning.put("metric", mce.getMetricName());
+				}
+				else {
+					dtRegModel = new DecisionTreeRegressor().fit(training);
+					predictions = dtRegModel.transform(testing);
+				}
+
+				predictions.show();
+				RegressionMetrics metrics = new RegressionMetrics(predictions.select("label", "prediction"));
+				System.out.println("-----<>-----"+model.get("model"));
 
 
+
+				Dataset<Row> p_orginal = predictions.select("prediction").limit(limit);
+				JSONObject p_original_json = Utils.convertFrameToJson2Single(p_orginal.collectAsList());
+
+
+				JSONObject temp_res = new JSONObject();
+				temp_res.put("prediction", p_original_json);
+				temp_res.put("mse", df2.format(metrics.meanSquaredError()));
+				temp_res.put("mae", df2.format(metrics.meanAbsoluteError()));
+				temp_res.put("rmse", df2.format(metrics.rootMeanSquaredError()));
+				temp_res.put("r2", df2.format(metrics.r2()));
+				temp_res.put("hyper_tuning", hyper_tuning);
+				temp_res.put("best_params", "");
+				res.put(model.get("model"), temp_res);
+
+			}
+
+
+			if (model.get("model").equals("random_forest") && model_type.equals("regression")){
+
+				Dataset<Row> predictions = null;
+
+				String best_params = "";
+
+				JSONObject hyper_tuning = new JSONObject();
+
+				if (model.get("hyper_params")!=null) {
+
+					Map<String, String> hyperParams = (Map<String, String>) model.get("hyper_params");
+
+					RF rfPojo = new RF();
+					rfPojo.setMaxBins(hyperParams.get("maxBins"));
+					rfPojo.setMaxDepth(hyperParams.get("maxDepth"));
+					rfPojo.setMinInfoGain(hyperParams.get("minInfoGain"));
+					rfPojo.setNumTrees(hyperParams.get("numTrees"));
+
+					System.out.println("RF"+rfPojo);
+					MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
+					mce.setMetricName((String) model.get("metric"));
+					RandomForestRegressor rf = new RandomForestRegressor();
+					ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(rf.maxBins(), rfPojo.getMaxBins()).addGrid(rf.maxDepth(), rfPojo.getMaxDepth()).addGrid(rf.minInfoGain(), rfPojo.getMinInfoGain()).addGrid(rf.numTrees(), rfPojo.getNumTrees());
+					ParamMap[] pMap = paramGrid.build();
+					CrossValidator cv = new CrossValidator().setNumFolds(Integer.valueOf(String.valueOf(model.get("kfold")))).setEstimator(rf).setEstimatorParamMaps(pMap).setEvaluator(mce);
+					CrossValidatorModel cvm = cv.fit(training);
+					//System.out.println("explains param "+cvm.explainParams());
+					System.out.println("best model params "+cvm.bestModel().explainParams());
+					best_params = cvm.bestModel().explainParams();
+					predictions = cvm.transform(testing);
+					for(double d : cvm.avgMetrics()) {
+						System.out.println("mteric "+d);
+					}
+					System.out.println(mce.evaluate(predictions));
+					System.out.println(mce.evaluate(predictions));
+					double best_metric_training = 0.0;
+
+					for(double d : cvm.avgMetrics()) {
+						if (d > best_metric_training) {
+							best_metric_training = d;
+						}
+						System.out.println("mteric "+d);
+					}
+					System.out.println(mce.evaluate(predictions));
+					double best_metric_testing =mce.evaluate(predictions);
+					System.out.println(mce.getMetricName());
+					hyper_tuning.put("best_metric_training", best_metric_training);
+					hyper_tuning.put("best_metric_testing", best_metric_testing);
+					hyper_tuning.put("metric", mce.getMetricName());
+				}
+				else {
+					rfRegModel = new RandomForestRegressor().fit(training);
+					predictions = rfRegModel.transform(testing);
+				}
+
+				predictions.show();
+				RegressionMetrics metrics = new RegressionMetrics(predictions.select("label", "prediction"));
+				System.out.println("-----<>-----"+model.get("model"));
+
+
+
+				Dataset<Row> p_orginal = predictions.select("prediction").limit(limit);
+				JSONObject p_original_json = Utils.convertFrameToJson2Single(p_orginal.collectAsList());
+
+
+				JSONObject temp_res = new JSONObject();
+				temp_res.put("prediction", p_original_json);
+				temp_res.put("mse", df2.format(metrics.meanSquaredError()));
+				temp_res.put("mae", df2.format(metrics.meanAbsoluteError()));
+				temp_res.put("rmse", df2.format(metrics.rootMeanSquaredError()));
+				temp_res.put("r2", df2.format(metrics.r2()));
+				temp_res.put("hyper_tuning", hyper_tuning);
+				temp_res.put("best_params", "");
+				res.put(model.get("model"), temp_res);
+
+			}
 
 		}
 

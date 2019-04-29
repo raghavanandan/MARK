@@ -213,6 +213,25 @@ public class Utils {
 	}
 
 
+	public static JSONObject convertFrameToJson2ColsRoc(List<Row> rows, String[] fields) {
+		JSONObject master = new JSONObject();
+
+		JSONArray arr = new JSONArray();
+
+		for (Row r : rows) {
+			JSONObject obj = new JSONObject();
+			for (int i=0; i<fields.length;i++) {
+				obj.put(fields[i], String.valueOf(r.get(i)));
+			}
+			arr.add(obj);
+		}
+
+		master.put("docs", arr);
+
+		return master;
+	}
+
+
 
 
 }

@@ -6,6 +6,7 @@
     "@material-ui/core": "^3.9.3",
     "bootstrap": "^4.3.1",
     "chart.js": "^2.6.0",
+    "d3": "^5.9.2",
     "fusioncharts": "^3.13.4",
     "moment": "^2.24.0",
     "npm": "^6.9.0",

@@ -31,7 +31,6 @@ class App extends Component {
     }
 
     componentDidMount() {
-        // console.log(this.props.history.location.pathname);
         if (this.props.history.location.pathname === '/') {
             this.setState({redirect: true});
         }

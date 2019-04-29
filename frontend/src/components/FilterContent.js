@@ -1,7 +1,6 @@
 import React, {Component} from 'react';
 import Select from "react-select";
 import * as API from "../api/API";
-// import {Loader} from "./Loader";
 import {FormControl} from "react-bootstrap";
 import {Loader} from "./Loader";
 
@@ -82,7 +81,7 @@ class FilterContent extends Component {
         this.setState({loader: true});
         API.queryDF(this.state.query).then((data) => {
             if (data !== 400) {
-                console.log(data);
+                // console.log(data);
                 this.setState({
                     file: data.docs,
                     filterHeaders: data.header,
@@ -97,19 +96,6 @@ class FilterContent extends Component {
     resetFrame() {
         this.setState({loader: true});
         API.resetDF().then((data) => {
-            // console.log(data);
-            // if (data !== 400) {
-            //     let headerArr = [];
-            //     for (let key in data.header) {
-            //         // console.log(data.header[key]);
-            //         headerArr.push(data.header[key].header)
-            //     }
-            //     this.setState({
-            //         file: data.docs,
-            //         headers: headerArr,
-            //         reset: false
-            //     })
-            // }
             if (data !== 400) {
                 this.setState({
                     isReset: true,
@@ -133,6 +119,7 @@ class FilterContent extends Component {
                 return options;
             });
         }
+
 
         return (
             <div className={"col-md-12 no-pad"}>

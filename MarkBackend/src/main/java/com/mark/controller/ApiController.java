@@ -116,6 +116,8 @@ public class ApiController {
 	private static final int limit = 50;
 
 	private static Map<String, Map<FramePojo,Dataset<Row>>> masterFrames = new HashMap<>();
+	
+	private static String master_frame_id;
 
 	@RequestMapping(value = "upload-file", method = RequestMethod.POST, produces =MediaType.APPLICATION_JSON_VALUE )
 	public ResponseEntity<Response> uploadFile(@RequestParam("file") MultipartFile file,@RequestParam("name") String name, @RequestParam("description") String description){
@@ -315,6 +317,7 @@ public class ApiController {
 			Dataset<Row> fdf = frameData.get(fPojo);
 			masterDf = fdf;
 			currentDf = masterDf;
+			master_frame_id = frameId;
 			List<Row> x = fdf.limit(limit).collectAsList();
 			JSONObject js = Utils.convertFrameToJson2(x);
 			//		System.out.println(js);
@@ -736,6 +739,19 @@ public class ApiController {
 			
 			
 		}
+		
+		Map<FramePojo, Dataset<Row>> frameData = masterFrames.get(master_frame_id);
+		
+		FramePojo tempFPojo = null;
+		
+		for (FramePojo fPojo : frameData.keySet()) {
+			tempFPojo = fPojo;
+			
+		}
+		
+		frameData.put(tempFPojo, masterDf);
+		
+		
 		
 		JSONObject js = Utils.convertFrameToJson2(currentDf.collectAsList());
 		//		System.out.println(js);

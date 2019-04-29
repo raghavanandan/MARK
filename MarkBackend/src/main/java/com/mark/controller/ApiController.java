@@ -27,6 +27,7 @@ import org.apache.spark.ml.classification.NaiveBayesModel;
 import org.apache.spark.ml.classification.RandomForestClassificationModel;
 import org.apache.spark.ml.classification.RandomForestClassifier;
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator;
+import org.apache.spark.ml.evaluation.RegressionEvaluator;
 import org.apache.spark.ml.feature.IndexToString;
 import org.apache.spark.ml.feature.OneHotEncoder;
 import org.apache.spark.ml.feature.StringIndexer;
@@ -1219,7 +1220,7 @@ public class ApiController {
 					linearRPojo.setTol(hyperParams.get("tol"));
 
 					System.out.println("linearRPojo POJO -> "+linearRPojo);
-					MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
+					RegressionEvaluator mce = new RegressionEvaluator().setPredictionCol("prediction").setLabelCol("label");
 					mce.setMetricName((String) model.get("metric"));
 					LinearRegression linearRegression = new LinearRegression();
 					ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(linearRegression.elasticNetParam(), linearRPojo.getElasticNetParam()).addGrid(linearRegression.maxIter(), linearRPojo.getMaxIter()).addGrid(linearRegression.tol(), linearRPojo.getTol());
@@ -1295,7 +1296,7 @@ public class ApiController {
 					dtPojo.setMinInstancesperNode(hyperParams.get("minInstancesperNode"));
 
 					System.out.println("DT POJO -> "+dtPojo);
-					MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
+					RegressionEvaluator mce = new RegressionEvaluator().setPredictionCol("prediction").setLabelCol("label");
 					mce.setMetricName((String) model.get("metric"));
 					DecisionTreeRegressor dt = new DecisionTreeRegressor();
 					ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(dt.maxBins(), dtPojo.getMaxBins()).addGrid(dt.maxDepth(), dtPojo.getMaxDepth()).addGrid(dt.minInfoGain(), dtPojo.getMinInfoGain()).addGrid(dt.minInstancesPerNode(), dtPojo.getMinInstancesperNode());
@@ -1372,7 +1373,7 @@ public class ApiController {
 					rfPojo.setNumTrees(hyperParams.get("numTrees"));
 
 					System.out.println("RF"+rfPojo);
-					MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
+					RegressionEvaluator mce = new RegressionEvaluator().setPredictionCol("prediction").setLabelCol("label");
 					mce.setMetricName((String) model.get("metric"));
 					RandomForestRegressor rf = new RandomForestRegressor();
 					ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(rf.maxBins(), rfPojo.getMaxBins()).addGrid(rf.maxDepth(), rfPojo.getMaxDepth()).addGrid(rf.minInfoGain(), rfPojo.getMinInfoGain()).addGrid(rf.numTrees(), rfPojo.getNumTrees());

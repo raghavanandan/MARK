@@ -516,8 +516,16 @@ public class ApiController {
 		Dataset<Row> f_df = currentDf;
 		if (!modelSelection.getFeatureCol().get(0).equals("All")) {
 			modelSelection.getFeatureCol().add((modelSelection.getOutputCol()));
-			String[] fArr = modelSelection.getFeatureCol().toArray(new String[0]);
-			f_df = currentDf.selectExpr(fArr);
+			String[] exp = new String[modelSelection.getFeatureCol().size()];
+			int i=0;
+			for (String s :modelSelection.getFeatureCol()) {
+				System.out.println(s);
+				exp[i] = "`"+s.trim()+"`";
+				i++;
+			}
+			
+			
+			f_df = currentDf.selectExpr(exp);
 		}
 
 
@@ -614,8 +622,16 @@ public class ApiController {
 		Dataset<Row> f_df = currentDf;
 		if (!modelSelection.getFeatureCol().get(0).equals("All")) {
 			modelSelection.getFeatureCol().add((modelSelection.getOutputCol()));
-			String[] fArr = modelSelection.getFeatureCol().toArray(new String[0]);
-			f_df = currentDf.selectExpr(fArr);
+			String[] exp = new String[modelSelection.getFeatureCol().size()];
+			int i=0;
+			for (String s :modelSelection.getFeatureCol()) {
+				System.out.println(s);
+				exp[i] = "`"+s.trim()+"`";
+				i++;
+			}
+			
+			
+			f_df = currentDf.selectExpr(exp);
 		}
 		f_df = f_df.withColumn("label", f_df.col(modelSelection.getOutputCol()));
 		f_df = f_df.withColumn("labelTmp", f_df.col("label").cast(DataTypes.DoubleType)).drop("label").withColumnRenamed("labelTmp", "label");

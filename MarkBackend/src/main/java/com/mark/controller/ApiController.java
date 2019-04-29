@@ -478,6 +478,20 @@ public class ApiController {
 			Object _mode = ((GenericRowWithSchema)mode.first()).values()[0];
 
 			js.put("mode", _mode);
+			try {
+			double[] quantiles = currentDf.stat().approxQuantile(columns.get(0), new double[] {.5}, 0.2);
+			JSONObject obj = new JSONObject();
+			obj.put("summary", "median");
+			obj.put(columns.get(0), quantiles[0]);
+			((JSONArray)js.get("docs")).add(obj);
+			}
+			catch(Exception e) {
+				JSONObject obj = new JSONObject();
+				obj.put("summary", "median");
+				obj.put(columns.get(0), null);
+				((JSONArray)js.get("docs")).add(obj);
+			}
+			
 		}
 
 

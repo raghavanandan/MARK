@@ -235,6 +235,19 @@ public class Utils {
 
 		return master;
 	}
+	
+	public static String getColumnType(Tuple2<String, String>[] dtypes, String col) {
+		
+		for (Tuple2<String, String> tup : dtypes) {
+			
+			if (tup._1.equals(col)) {
+				return tup._2;
+			}
+			
+		}
+		return "";
+		
+	}
 
 
 

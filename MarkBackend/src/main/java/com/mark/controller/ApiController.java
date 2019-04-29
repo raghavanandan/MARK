@@ -696,9 +696,6 @@ public class ApiController {
 	}
 	
 	
-	
-	
-	
 	@RequestMapping(value="update-missing")
 	public ResponseEntity<JSONObject> updateMissingValues(@RequestBody MissingData missingData){
 		
@@ -714,11 +711,40 @@ public class ApiController {
 			String[] c = new String[1];
 			c[0] = missingData.getNewColumnName();
 			
-//			masterDf.na().fill((String)replaceValue ,c);
+			String type = Utils.getColumnType(masterDf.dtypes(), missingData.getNewColumnName());
+			
+			switch (type) {
+			case "DoubleType":
+				masterDf.na().fill(Double.valueOf(missingData.getValue()) ,c);
+				break;
+			
+			case "StringType":
+				masterDf.na().fill(missingData.getValue() ,c);
+				break;
+				
+				
+			case "LongType":
+				masterDf.na().fill(Long.valueOf(missingData.getValue()) ,c);
+				break;
+
+			default:
+				break;
+			}
+			
+			
 		}
 		
-		
-		return null;
+		JSONObject js = Utils.convertFrameToJson2(currentDf.collectAsList());
+		//		System.out.println(js);
+
+		Tuple2<String, String>[] dtypes = currentDf.dtypes();
+
+		JSONArray header = Utils.getTypes(dtypes);
+
+		js.put("header", header);
+
+		return new ResponseEntity<>(js, HttpStatus.OK);
+	
 	}
 
 	@RequestMapping(value="predict")

@@ -812,6 +812,8 @@ public class ApiController {
 				Dataset<Row> predictions = null;
 
 				String best_params = "";
+				JSONObject hyper_tuning = new JSONObject();
+
 
 				if (model.get("hyper_params")!=null) {
 
@@ -825,6 +827,7 @@ public class ApiController {
 
 					System.out.println("DT POJO -> "+dtPojo);
 					MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
+					mce.setMetricName((String) model.get("metric"));
 					DecisionTreeClassifier dt = new DecisionTreeClassifier();
 					ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(dt.maxBins(), dtPojo.getMaxBins()).addGrid(dt.maxDepth(), dtPojo.getMaxDepth()).addGrid(dt.minInfoGain(), dtPojo.getMinInfoGain()).addGrid(dt.minInstancesPerNode(), dtPojo.getMinInstancesperNode());
 					ParamMap[] pMap = paramGrid.build();
@@ -834,10 +837,20 @@ public class ApiController {
 					System.out.println("best model params "+cvm.bestModel().explainParams());
 					best_params = cvm.bestModel().explainParams();
 					predictions = cvm.transform(testing);
+					double best_metric_training = 0.0;
+
 					for(double d : cvm.avgMetrics()) {
+						if (d > best_metric_training) {
+							best_metric_training = d;
+						}
 						System.out.println("mteric "+d);
 					}
 					System.out.println(mce.evaluate(predictions));
+					double best_metric_testing =mce.evaluate(predictions);
+					System.out.println(mce.getMetricName());
+					hyper_tuning.put("best_metric_training", best_metric_training);
+					hyper_tuning.put("best_metric_testing", best_metric_testing);
+					hyper_tuning.put("metric", mce.getMetricName());
 				}
 				else {
 					dtModel = new DecisionTreeClassifier().fit(training);
@@ -881,6 +894,7 @@ public class ApiController {
 				temp_res.put("precision", df2.format(precision));
 				temp_res.put("recall", df2.format(recall));
 				temp_res.put("best_params", best_params);
+				temp_res.put("hyper_tuning", hyper_tuning);
 
 				res.put(model.get("model"), temp_res);
 
@@ -891,6 +905,7 @@ public class ApiController {
 				Dataset<Row> predictions = null;
 
 				String best_params = "";
+				JSONObject hyper_tuning = new JSONObject();
 
 				if (model.get("hyper_params")!=null) {
 
@@ -901,6 +916,7 @@ public class ApiController {
 
 					System.out.println("NB POJO -> "+nbPojo);
 					MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
+					mce.setMetricName((String) model.get("metric"));
 					NaiveBayes nb = new NaiveBayes();
 					ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(nb.smoothing(),nbPojo.getSmoothing());
 					ParamMap[] pMap = paramGrid.build();
@@ -910,10 +926,20 @@ public class ApiController {
 					System.out.println("best model params "+cvm.bestModel().explainParams());
 					best_params = cvm.bestModel().explainParams();
 					predictions = cvm.transform(testing);
+					double best_metric_training = 0.0;
+
 					for(double d : cvm.avgMetrics()) {
+						if (d > best_metric_training) {
+							best_metric_training = d;
+						}
 						System.out.println("mteric "+d);
 					}
 					System.out.println(mce.evaluate(predictions));
+					double best_metric_testing =mce.evaluate(predictions);
+					System.out.println(mce.getMetricName());
+					hyper_tuning.put("best_metric_training", best_metric_training);
+					hyper_tuning.put("best_metric_testing", best_metric_testing);
+					hyper_tuning.put("metric", mce.getMetricName());
 				}
 				else {
 					nbModel = new NaiveBayes().fit(training);
@@ -954,6 +980,7 @@ public class ApiController {
 				temp_res.put("precision", df2.format(precision));
 				temp_res.put("recall", df2.format(recall));
 				temp_res.put("best_params", best_params);
+				temp_res.put("hyper_tuning", hyper_tuning);
 				res.put(model.get("model"), temp_res);
 
 
@@ -966,6 +993,7 @@ public class ApiController {
 				Dataset<Row> predictions = null;
 
 				String best_params = "";
+				JSONObject hyper_tuning = new JSONObject();
 
 				if (model.get("hyper_params")!=null) {
 
@@ -979,6 +1007,7 @@ public class ApiController {
 
 					System.out.println("RF"+rfPojo);
 					MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
+					mce.setMetricName((String) model.get("metric"));
 					RandomForestClassifier rf = new RandomForestClassifier();
 					ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(rf.maxBins(), rfPojo.getMaxBins()).addGrid(rf.maxDepth(), rfPojo.getMaxDepth()).addGrid(rf.minInfoGain(), rfPojo.getMinInfoGain()).addGrid(rf.numTrees(), rfPojo.getNumTrees());
 					ParamMap[] pMap = paramGrid.build();
@@ -988,10 +1017,20 @@ public class ApiController {
 					System.out.println("best model params "+cvm.bestModel().explainParams());
 					best_params = cvm.bestModel().explainParams();
 					predictions = cvm.transform(testing);
+					double best_metric_training = 0.0;
+
 					for(double d : cvm.avgMetrics()) {
+						if (d > best_metric_training) {
+							best_metric_training = d;
+						}
 						System.out.println("mteric "+d);
 					}
 					System.out.println(mce.evaluate(predictions));
+					double best_metric_testing =mce.evaluate(predictions);
+					System.out.println(mce.getMetricName());
+					hyper_tuning.put("best_metric_training", best_metric_training);
+					hyper_tuning.put("best_metric_testing", best_metric_testing);
+					hyper_tuning.put("metric", mce.getMetricName());
 				}
 				else {
 					rfModel = new RandomForestClassifier().fit(training);
@@ -1030,6 +1069,7 @@ public class ApiController {
 				temp_res.put("precision", df2.format(precision));
 				temp_res.put("recall", df2.format(recall));
 				temp_res.put("best_params", "");
+				temp_res.put("hyper_tuning", hyper_tuning);
 
 				res.put(model.get("model"), temp_res);
 			}

@@ -69,6 +69,7 @@ import com.mark.pojo.DT;
 import com.mark.pojo.FramePojo;
 import com.mark.pojo.LR;
 import com.mark.pojo.LinearR;
+import com.mark.pojo.MissingData;
 import com.mark.pojo.ModelSelection;
 import com.mark.pojo.NB;
 import com.mark.pojo.RF;
@@ -692,6 +693,32 @@ public class ApiController {
 
 		preppedDataDF.show();
 		return f_df;
+	}
+	
+	
+	
+	
+	
+	@RequestMapping(value="update-missing")
+	public ResponseEntity<JSONObject> updateMissingValues(@RequestBody MissingData missingData){
+		
+		if (!missingData.getOldColumnName().equals(missingData.getNewColumnName())) {
+			
+			masterDf.withColumnRenamed(missingData.getOldColumnName(), missingData.getNewColumnName());
+			currentDf.withColumnRenamed(missingData.getOldColumnName(), missingData.getNewColumnName());
+			
+		}
+		
+		if (missingData.getValue().trim().length()!=0) {
+			
+			String[] c = new String[1];
+			c[0] = missingData.getNewColumnName();
+			
+//			masterDf.na().fill((String)replaceValue ,c);
+		}
+		
+		
+		return null;
 	}
 
 	@RequestMapping(value="predict")

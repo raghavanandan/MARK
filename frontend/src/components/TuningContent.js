@@ -31,6 +31,7 @@ class TuningContent extends Component{
             tuneData: {},
             showResults: false,
             loader: false,
+            bestParams: {}
         };
 
         // this.updateModels = this.updateModels.bind(this);
@@ -125,11 +126,10 @@ class TuningContent extends Component{
     }
 
     tuneModel() {
-        console.log(this.state.tuneData);
         this.setState({loader: true});
+        console.log(this.state.tuneData);
         API.predictModel({outputCol: this.state.targetColumn.value, data: [this.state.tuneData], model: this.state.group.toLowerCase()    }).then((data) => {
             if (data !== 400) {
-                console.log(data);
                 let category = [];
                 let fMeasureValues = [];
                 let precisionValues = [];
@@ -144,6 +144,8 @@ class TuningContent extends Component{
                 let chartDataSet = [];
                 let key = Object.keys(data).sort();
                 let props = Object.keys(data[key]);
+
+                // console.log(data[key]["best_params"]);
 
                 if (props.includes("mse")) {
                     mseValues.push({"value": data[key]["mse"]});
@@ -238,7 +240,7 @@ class TuningContent extends Component{
                     }
                 };
 
-                this.setState({showResults: true, chartData, loader: false})
+                this.setState({showResults: true, chartData, loader: false, bestParams: data[key]["best_params"]}, () => console.log(this.state.bestParams))
             }
         }).catch((err) => {
             console.log(err);
@@ -332,7 +334,14 @@ class TuningContent extends Component{
         regressionMetrics.push({value: "mae", label: "Mean Absolute Error"});
         regressionMetrics.push({value: "mse", label: "Mean Squared Error"});
         regressionMetrics.push({value: "r2", label: "R2"});
-        regressionMetrics.push({value: "rmse", label: "Root Mean Squared Error"})
+        regressionMetrics.push({value: "rmse", label: "Root Mean Squared Error"});
+
+        // let given_params = [];
+        // if (Object.keys(this.state.tuneData).length > 0) {
+        //     given_params.push(this.state.tuneData);
+        // }
+        //
+        // console.log(given_params);
 
         return(
             <div className={"col-md-12 no-pad"}>
@@ -400,8 +409,7 @@ class TuningContent extends Component{
                             <hr className={"col-md-11 custom-hr"} />
                             {this.state.group !== "Clustering" ?
                                 <div className={"form-group col-md-12 no-pad "}>
-                                    <span
-                                        className={"col-md-12 no-pad medium-bottom-pad"}><strong>Target Column</strong></span>
+                                    <span className={"col-md-12 no-pad medium-bottom-pad"}><strong>Target Column</strong></span>
                                     <div className={"col-md-12 no-pad"}>
                                         <Select
                                             className={"col-md-8 no-pad"}
@@ -417,7 +425,7 @@ class TuningContent extends Component{
                             }
                             <div className={"form-group col-md-12 no-pad medium-top-pad"}>
                                 <span className={"col-md-12 no-pad medium-bottom-pad"}><strong>Input feature columns</strong></span>
-                                <p className={"col-md-7 no-pad"}>
+                                <p className={"col-md-8 no-pad"}>
                                     You can choose one or more input columns as a part of feature selection, which will be used to train the models.
                                 </p>
                                 <div className={"col-md-12 no-pad"}>
@@ -464,13 +472,13 @@ class TuningContent extends Component{
                             <div className={"col-md-12 form-group no-pad medium-top-pad"}>
                                 <div className={"col-md-12 no-pad medium-bottom-pad"}><strong>Hyper Parameters</strong></div>
                                 <div className={"col-md-12 no-pad medium-bottom-pad"}>
-                                    <p className={"col-md-4 no-pad"}>
+                                    <p className={"col-md-8 no-pad"}>
                                         You can enter a single value or comma separated values for multiple values.
                                     </p>
                                 </div>
                                 {PARAMS.hyper_params[model].map((param,index) => (
                                     <div className={"col-md-12 no-pad form-group"} key={index}>
-                                        <label className={"col-md-3 no-pad"}>{param.name}</label>
+                                        <label className={"col-md-5 no-pad"}>{param.name}</label>
                                         <div className={"col-md-6 no-pad"}>
                                             <input
                                                 type={"text"}
@@ -504,6 +512,34 @@ class TuningContent extends Component{
                         <>
                             <div className={"col-md-12 top-pad"}>
                                 <span className={"custom-h2-header"}>Tuning Results</span>
+                            </div>
+                            <div className={"col-md-12 no-pad top-pad"}>
+                                <div className={"col-md-6"}>
+                                    <h4>Given Parameters</h4>
+                                    {model.length > 0 ?
+                                        <>
+                                            {PARAMS.hyper_params[model].map((param, index) => (
+                                                <div className={"col-md-12 no-pad form-group"} key={index}>
+                                                    <label className={"col-md-6 no-pad"}>{param.name}</label>
+                                                    <span className={"col-md-6 no-pad"}>{this.state.tuneData["hyper_params"][param.name]}</span>
+                                                </div>
+                                            ))}
+                                        </> : null
+                                    }
+                                </div>
+                                <div className={"col-md-6"}>
+                                    <h4>Best Parameters</h4>
+                                    {Object.keys(this.state.bestParams).length > 0 ?
+                                        <>
+                                            {PARAMS.hyper_params[model].map((param, index) => (
+                                                <div className={"col-md-12 no-pad form-group"} key={index}>
+                                                    <label className={"col-md-6 no-pad"}>{param.name}</label>
+                                                    <span className={"col-md-6 no-pad"}>{this.state.bestParams[param.name]}</span>
+                                                </div>
+                                            ))}
+                                        </> : null
+                                    }
+                                </div>
                             </div>
                             <div className={"col-md-12 text-center no-pad top-pad"}>
                                 <ReactFC {...this.state.chartData}/>

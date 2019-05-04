@@ -6,6 +6,7 @@ class UploadDatasetModal extends Component {
         super(props);
         this.state = {
             validated: false,
+            isHeaderPresent : null
         };
 
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -26,12 +27,14 @@ class UploadDatasetModal extends Component {
             fileData = {
                 file,
                 name,
+                headers : this.state.isHeaderPresent,
                 description
             };
         } else {
             fileData = {
                 file,
-                name
+                name,
+                headers : this.state.isHeaderPresent
             };
         }
 
@@ -60,6 +63,13 @@ class UploadDatasetModal extends Component {
                             <Form.Label>Select the dataset to upload: <span className={"required"}>*</span></Form.Label>
                             <Form.Control type={"file"} required/>
                         </Form.Group>
+                        <div className={"col-md-12 form-group"}>
+                            <label className={"col-md-12 no-pad"}>Does the file contain column headers ? <span className={"required"}>*</span></label>
+                                <input type={"radio"} name={"headers"} id={"yes"} onChange={() => this.setState({isHeaderPresent: true})}/>&nbsp;&nbsp;&nbsp;
+                                <label htmlFor={"yes"}>Yes</label>&nbsp;&nbsp;&nbsp;
+                                <input type={"radio"} name={"headers"} id={"no"} onChange={() => this.setState({isHeaderPresent: false})}/>&nbsp;&nbsp;&nbsp;
+                                <label htmlFor={"no"}>No</label>
+                        </div>
                         <Form.Group controlId={"formBasicName"}>
                             <Form.Label>Enter a name for the dataset: <span className={"required"}>*</span></Form.Label>
                             <Form.Control type="text" placeholder={"Name of the file"} required/>

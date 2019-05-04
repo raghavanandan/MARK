@@ -287,7 +287,7 @@ class TrainContent extends Component {
                             category.push({"label": model_keys[key]});
                         }
 
-                        console.log(chartDataSet);
+                        // console.log(chartDataSet);
 
                         const chartData = {
                             type: 'mscolumn2d',// The chart type

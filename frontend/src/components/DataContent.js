@@ -167,13 +167,13 @@ class DataContent extends Component{
                                                 <div className={"col-md-6 no-left-pad"}>{this.state.singleColumnStats.median}</div>
                                             </div> : null
                                         }
-                                        {this.state.singleColumnStats.min ?
+                                        {this.state.singleColumnStats.min && !this.state.columnType === "StringType" ?
                                             <div className={"form-group custom-form-group"}>
                                                 <label className={"col-md-6 no-left-pad"}>Min:</label>
                                                 <div className={"col-md-6 no-left-pad"}>{this.state.singleColumnStats.min}</div>
                                             </div> : null
                                         }
-                                        {this.state.singleColumnStats.max ?
+                                        {this.state.singleColumnStats.max && !this.state.columnType === "StringType" ?
                                             <div className={"form-group custom-form-group"}>
                                                 <label className={"col-md-6 no-left-pad"}>Max:</label>
                                                 <div className={"col-md-6 no-left-pad"}>{this.state.singleColumnStats.max}</div>

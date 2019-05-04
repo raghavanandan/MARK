@@ -48,6 +48,14 @@ class SideNavbar extends Component{
                         Datasets
                     </div>
                 </li>
+                <li className={"side-navlinks text-center"}>
+                    <div className={"side-navlinks-icon"}>
+                        <i className={"fas fa-globe"} />
+                    </div>
+                    <div className={"side-navlinks-name"}>
+                        Web Service
+                    </div>
+                </li>
             </div>
         );
     }

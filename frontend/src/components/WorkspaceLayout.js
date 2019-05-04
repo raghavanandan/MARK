@@ -5,6 +5,7 @@ import VisualizeContent from "./VisualizeContent";
 import FilterContent from "./FilterContent";
 import TrainContent from "./TrainContent";
 import TuningContent from "./TuningContent";
+import SharingContent from "./SharingContent";
 // import ExperimentNavbar from "./ExperimentNavbar";
 
 class WorkspaceLayout extends Component {
@@ -19,6 +20,7 @@ class WorkspaceLayout extends Component {
             showFilters: false,
             showModels: false,
             showTuning: false,
+            showWebService: false,
             filters: {},
             column: '',
             isExpanded: false,
@@ -54,7 +56,8 @@ class WorkspaceLayout extends Component {
                 showVis: true,
                 showFilters: false,
                 showModels: false,
-                showTuning: false
+                showTuning: false,
+                showWebService: false
             })
         } else if (tab === "FILTERS") {
             this.setState({
@@ -62,7 +65,8 @@ class WorkspaceLayout extends Component {
                 showVis: false,
                 showFilters: true,
                 showModels: false,
-                showTuning: false
+                showTuning: false,
+                showWebService: false
             })
         } else if (tab === "MODELS") {
             this.setState({
@@ -70,7 +74,8 @@ class WorkspaceLayout extends Component {
                 showVis: false,
                 showFilters: false,
                 showModels: true,
-                showTuning: false
+                showTuning: false,
+                showWebService: false
             })
         } else if (tab === "TUNING") {
             this.setState({
@@ -78,7 +83,17 @@ class WorkspaceLayout extends Component {
                 showVis: false,
                 showFilters: false,
                 showModels: false,
-                showTuning: true
+                showTuning: true,
+                showWebService: false
+            })
+        } else if (tab === "WEBSERVICE") {
+            this.setState({
+                showData: false,
+                showVis: false,
+                showFilters: false,
+                showModels: false,
+                showTuning: false,
+                showWebService: true
             })
         }
     }
@@ -131,6 +146,7 @@ class WorkspaceLayout extends Component {
                     <div className={"col-md-1 text-center workspace-nav " + (this.state.showFilters ? "tab-active" : "")} onClick={() => this.changeContent("FILTERS")}>FILTERS</div>
                     <div className={"col-md-1 text-center workspace-nav " + (this.state.showModels ? "tab-active" : "")} onClick={() => this.changeContent("MODELS")}>TRAIN</div>
                     <div className={"col-md-1 text-center workspace-nav " + (this.state.showTuning ? "tab-active" : "")} onClick={() => this.changeContent("TUNING")}>TUNING</div>
+                    <div className={"col-md-1 text-center workspace-nav " + (this.state.showWebService ? "tab-active" : "")} onClick={() => this.changeContent("WEBSERVICE")}>SHARE</div>
                 </div>
                 <div className={"col-md-12 workspace-content"}>
                     {this.state.showData ?
@@ -152,6 +168,9 @@ class WorkspaceLayout extends Component {
                     {this.state.showTuning ?
                         <TuningContent expId={this.state.expId}/>
                         : null
+                    }
+                    {this.state.showWebService ?
+                        <SharingContent expId={this.state.expId} /> : null
                     }
                 </div>
             </>

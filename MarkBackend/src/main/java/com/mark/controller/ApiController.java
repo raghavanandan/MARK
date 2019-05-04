@@ -796,7 +796,7 @@ public class ApiController {
 
 				Dataset<Row> predictions = null;
 
-				String best_params = "";
+				JSONObject best_params = new JSONObject();
 
 				JSONObject hyper_tuning = new JSONObject();
 
@@ -820,7 +820,9 @@ public class ApiController {
 					CrossValidatorModel cvm = cv.fit(training);
 					//System.out.println("explains param "+cvm.explainParams());
 					System.out.println("best model params "+cvm.bestModel().explainParams());
-					best_params = cvm.bestModel().explainParams();
+					String bestParams = cvm.bestModel().explainParams();
+					best_params = Utils.parseBestParam(hyperParams, bestParams);
+					
 					predictions = cvm.transform(testing);
 
 
@@ -898,7 +900,7 @@ public class ApiController {
 
 				Dataset<Row> predictions = null;
 
-				String best_params = "";
+				JSONObject best_params = new JSONObject();
 				JSONObject hyper_tuning = new JSONObject();
 
 
@@ -922,7 +924,8 @@ public class ApiController {
 					CrossValidatorModel cvm = cv.fit(training);
 					//System.out.println("explains param "+cvm.explainParams());
 					System.out.println("best model params "+cvm.bestModel().explainParams());
-					best_params = cvm.bestModel().explainParams();
+					String bestParams = cvm.bestModel().explainParams();
+					best_params = Utils.parseBestParam(hyperParams, bestParams);
 					predictions = cvm.transform(testing);
 					double best_metric_training = 0.0;
 
@@ -991,7 +994,7 @@ public class ApiController {
 
 				Dataset<Row> predictions = null;
 
-				String best_params = "";
+				JSONObject best_params = new JSONObject();
 				JSONObject hyper_tuning = new JSONObject();
 
 				if (model.get("hyper_params")!=null) {
@@ -1011,7 +1014,8 @@ public class ApiController {
 					CrossValidatorModel cvm = cv.fit(training);
 					//System.out.println("explains param "+cvm.explainParams());
 					System.out.println("best model params "+cvm.bestModel().explainParams());
-					best_params = cvm.bestModel().explainParams();
+					String bestParams = cvm.bestModel().explainParams();
+					best_params = Utils.parseBestParam(hyperParams, bestParams);
 					predictions = cvm.transform(testing);
 					double best_metric_training = 0.0;
 
@@ -1079,7 +1083,7 @@ public class ApiController {
 
 				Dataset<Row> predictions = null;
 
-				String best_params = "";
+				JSONObject best_params = new JSONObject();
 				JSONObject hyper_tuning = new JSONObject();
 
 				if (model.get("hyper_params")!=null) {
@@ -1102,7 +1106,8 @@ public class ApiController {
 					CrossValidatorModel cvm = cv.fit(training);
 					//System.out.println("explains param "+cvm.explainParams());
 					System.out.println("best model params "+cvm.bestModel().explainParams());
-					best_params = cvm.bestModel().explainParams();
+					String bestParams = cvm.bestModel().explainParams();
+					best_params = Utils.parseBestParam(hyperParams, bestParams);
 					predictions = cvm.transform(testing);
 					double best_metric_training = 0.0;
 
@@ -1206,7 +1211,7 @@ public class ApiController {
 
 				Dataset<Row> predictions = null;
 
-				String best_params = "";
+				JSONObject best_params = new JSONObject();
 
 				JSONObject hyper_tuning = new JSONObject();
 
@@ -1229,7 +1234,8 @@ public class ApiController {
 					CrossValidatorModel cvm = cv.fit(training);
 					//System.out.println("explains param "+cvm.explainParams());
 					System.out.println("best model params "+cvm.bestModel().explainParams());
-					best_params = cvm.bestModel().explainParams();
+					String bestParams = cvm.bestModel().explainParams();
+					best_params = Utils.parseBestParam(hyperParams, bestParams);
 					predictions = cvm.transform(testing);
 					for(double d : cvm.avgMetrics()) {
 						System.out.println("mteric "+d);
@@ -1282,7 +1288,7 @@ public class ApiController {
 
 				Dataset<Row> predictions = null;
 
-				String best_params = "";
+				JSONObject best_params = new JSONObject();
 
 				JSONObject hyper_tuning = new JSONObject();
 
@@ -1305,7 +1311,8 @@ public class ApiController {
 					CrossValidatorModel cvm = cv.fit(training);
 					//System.out.println("explains param "+cvm.explainParams());
 					System.out.println("best model params "+cvm.bestModel().explainParams());
-					best_params = cvm.bestModel().explainParams();
+					String bestParams = cvm.bestModel().explainParams();
+					best_params = Utils.parseBestParam(hyperParams, bestParams);
 					predictions = cvm.transform(testing);
 					for(double d : cvm.avgMetrics()) {
 						System.out.println("mteric "+d);
@@ -1358,7 +1365,7 @@ public class ApiController {
 
 				Dataset<Row> predictions = null;
 
-				String best_params = "";
+				JSONObject best_params = new JSONObject();
 
 				JSONObject hyper_tuning = new JSONObject();
 
@@ -1382,7 +1389,8 @@ public class ApiController {
 					CrossValidatorModel cvm = cv.fit(training);
 					//System.out.println("explains param "+cvm.explainParams());
 					System.out.println("best model params "+cvm.bestModel().explainParams());
-					best_params = cvm.bestModel().explainParams();
+					String bestParams = cvm.bestModel().explainParams();
+					best_params = Utils.parseBestParam(hyperParams, bestParams);
 					predictions = cvm.transform(testing);
 					for(double d : cvm.avgMetrics()) {
 						System.out.println("mteric "+d);

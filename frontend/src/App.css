@@ -60,8 +60,8 @@ input[type=number]::-webkit-inner-spin-button {
 .side-navbar {
   background-color: #fafafa;
   border-right: 0.02rem solid #ccc;
-  color: #637282;
-  height: 650px;
+  color: #637282;height: 650px;
+
   font-size: 16px;
 }
 
@@ -456,6 +456,21 @@ input[type=number]::-webkit-inner-spin-button {
   height: 200px !important;
 }
 
+.first-half-div {
+  border-right: 0.02rem solid #ccc;
+  height: 538px;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  padding-bottom: 80px;
+}
+
+.second-half-div {
+  height: 538px;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  padding-bottom: 80px;
+}
+
 .stat-separator {
   margin-top: 0;
   margin-bottom: 20px;
@@ -558,10 +573,10 @@ input[type=number]::-webkit-inner-spin-button {
   color: #0070e0;
 }
 
-/*.workspace-content {*/
+.workspace-content {
   /*overflow-y: scroll;*/
-  /*height: 565px;*/
-/*}*/
+  height: 565px;
+}
 
 .props-div {
   border-right: 0.02rem solid #ccc;

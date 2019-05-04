@@ -2,6 +2,7 @@
   "models": [
     "Decision Tree",
     "Logistic Regression",
+    "Linear Regression",
     "Naive Bayes",
     "Random Forests",
     "Gradient Boosted Trees",
@@ -27,6 +28,20 @@
         "defaultValue": "0.0001"
       }
     ],
+    "Linear Regression": [
+      {
+        "name": "elasticNetParam",
+        "defaultValue": "0.0"
+      },
+      {
+        "name": "maxIter",
+        "defaultValue": "25"
+      },
+      {
+        "name": "tol",
+        "defaultValue":"0.00001"
+      }
+    ],
     "Decision Tree": [
       {
         "name": "maxBins",
@@ -41,7 +56,7 @@
         "defaultValue": "0.0"
       },
       {
-        "name": "minInstancesPerNode",
+        "name": "minInstancesperNode",
         "defaultValue": "2"
       }
     ],
@@ -93,21 +108,21 @@
     ],
     "K-Means": [
       {
-        "name": "A",
-        "defaultValue": "10"
-      },
-      {
-        "name": "B",
-        "defaultValue": "10"
+        "name": "K",
+        "defaultValue": "2"
       }
     ],
     "Bisecting K-Means": [
       {
-        "name": "A",
+        "name": "K",
+        "defaultValue": "2"
+      },
+      {
+        "name": "maxIterations",
         "defaultValue": "10"
       },
       {
-        "name": "B",
+        "name": "minDivisibleClusterSize",
         "defaultValue": "10"
       }
     ]

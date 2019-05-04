@@ -213,6 +213,7 @@ export const getStats = (column) => {
 };
 
 export const prepareModel = (modelData) => {
+    // console.log("Prepare Model Req", modelData);
     return fetch(`${url}/prepare-model`, {
         method: 'POST',
         headers: new Headers({
@@ -233,6 +234,7 @@ export const prepareModel = (modelData) => {
 };
 
 export const predictModel = (modelData) => {
+    // console.log("predict Model Req", modelData);
     return fetch(`${url}/predict`, {
         method: 'POST',
         headers: new Headers({
@@ -250,4 +252,24 @@ export const predictModel = (modelData) => {
             }).catch(() => {
             return 400;
         })
+};
+
+export const updateMissing = (data) => {
+    return fetch(`${url}/update-missing`, {
+        method: 'POST',
+        headers: new Headers({
+            'Content-Type': 'application/json'
+        }),
+        body: JSON.stringify(data)
+    }).then((res) => {
+        if (res.status !== 200) {
+            throw Error(res.statusText);
+        } else {
+            return res.json();
+        }
+    }).then((resJSON) => {
+        return resJSON;
+    }).catch(() => {
+        return 400;
+    })
 };

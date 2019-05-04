@@ -20,6 +20,7 @@ class DataContent extends Component{
             showCustom: false,
             customValue: "",
             oldColumnName: "",
+            updateLoader: false,
         };
 
         this.showColumnStats =  this.showColumnStats.bind(this);
@@ -47,6 +48,7 @@ class DataContent extends Component{
     }
 
     handleUpdateColumn() {
+        this.setState({updateLoader: true});
         let data = {
             "oldColumnName": this.state.oldColumnName,
             "newColumnName": this.state.columnName,
@@ -54,7 +56,15 @@ class DataContent extends Component{
             "columnType": this.state.columnType
         };
 
-        console.log(data);
+
+        API.updateMissing(data).then((data) => {
+            if (data !== 400) {
+                this.loadTable();
+                this.setState({updateLoader: false, singleColumnStats: ""});
+            }
+        }).catch((err) => {
+            console.log(err);
+        })
     }
 
     handleChangeReplacement(e) {
@@ -211,6 +221,7 @@ class DataContent extends Component{
                                             }
                                             <div className={"form-group medium-top-pad"}>
                                                 <button className={"action-btn"} onClick={this.handleUpdateColumn}>Update</button>
+                                                {this.updateLoader ? <Loader/> : null}
                                             </div>
                                         </> : null
                                     }

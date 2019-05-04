@@ -121,7 +121,7 @@ public class ApiController {
 	private static String master_frame_id;
 
 	@RequestMapping(value = "upload-file", method = RequestMethod.POST, produces =MediaType.APPLICATION_JSON_VALUE )
-	public ResponseEntity<Response> uploadFile(@RequestParam("file") MultipartFile file,@RequestParam("name") String name, @RequestParam("description") String description){
+	public ResponseEntity<Response> uploadFile(@RequestParam("file") MultipartFile file,@RequestParam("name") String name, @RequestParam("description") String description, @RequestParam("header") String header){
 
 		String fpath = null;
 		try {
@@ -135,7 +135,7 @@ public class ApiController {
 		}
 		System.out.println("filepath: "+fpath);
 
-		return new ResponseEntity<>(fileParser.parseFile(fpath, name, description), HttpStatus.OK);
+		return new ResponseEntity<>(fileParser.parseFile(fpath, name, description, Boolean.parseBoolean(header)), HttpStatus.OK);
 	}
 
 	@RequestMapping("get-doc")

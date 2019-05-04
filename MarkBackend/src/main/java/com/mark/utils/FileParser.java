@@ -27,8 +27,7 @@ public class FileParser {
 	@Autowired
 	private Mongo mongo;
 
-	public Response parseFile(String filePath, String name, String description) {
-
+	public Response parseFile(String filePath, String name, String description, boolean headerPresent) {
 
 		Reader reader = null;
 		try {
@@ -42,32 +41,49 @@ public class FileParser {
 
 		CSVReader csvReader = new CSVReader(reader);
 		String[] header = null, nextRecord;
-		try {
-			header = csvReader.readNext();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		String[] d = null;
+		if (headerPresent) {
+			try {
+				header = csvReader.readNext();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 
-			//illegal header
+				//illegal header
+			}
 		}
+		else {
+			try {
+				d = csvReader.readNext();
+				header = new String[d.length];
+				for (int i=0; i< d.length; ++i) {
+					header[i] = "feature_"+i;
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+	
 
 
 		ArrayList<HashMap<String, Object>> records = new ArrayList<HashMap<String, Object>>();
 
-		
+
 		HashMap<String, Object> meta = new HashMap<>();
-		
+
 		meta.put("header", header);
 		meta.put("name", name);
 		meta.put("size", Utils.getFileSize(filePath));
 		meta.put("description", description);
 		meta.put("timestamp", Calendar.getInstance().getTimeInMillis());
-		
+
 		String js = new Gson().toJson(meta);
-		
-		
+
+
 		String objectId = mongo.insertOne(js);
-		
+
 
 		try {
 			while((nextRecord = csvReader.readNext()) != null) {
@@ -81,6 +97,16 @@ public class FileParser {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			//illegal body
+		}
+		
+		if (!headerPresent) {
+			HashMap<String, Object> record = new HashMap<String, Object>();
+			for (int i=0; i< header.length; ++i) {
+				record.put(header[i], Utils.stringToDataType(d[i]));
+			}
+			record.put("meta_id",objectId);
+			records.add(record);
+			
 		}
 
 
@@ -98,6 +124,6 @@ public class FileParser {
 
 	}
 
-	
+
 
 }

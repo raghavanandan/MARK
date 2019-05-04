@@ -814,7 +814,7 @@ public class ApiController {
 					MulticlassClassificationEvaluator mce = new MulticlassClassificationEvaluator().setPredictionCol("prediction").setLabelCol("label");
 					mce.setMetricName((String) model.get("metric"));
 					LogisticRegression lr = new LogisticRegression();
-					ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(lr.elasticNetParam(), lrPojo.getElasticNetParam()).addGrid(lr.regParam(), lrPojo.getRegParam()).addGrid(lr.maxIter(), lrPojo.getMaxIter());
+					ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(lr.elasticNetParam(), lrPojo.getElasticNetParam()).addGrid(lr.regParam(), lrPojo.getRegParam()).addGrid(lr.maxIter(), lrPojo.getMaxIter()).addGrid(lr.tol(), lrPojo.getTol());
 					ParamMap[] pMap = paramGrid.build();
 					CrossValidator cv = new CrossValidator().setNumFolds(Integer.valueOf(String.valueOf(model.get("kfold")))).setEstimator(lr).setEstimatorParamMaps(pMap).setEvaluator(mce);
 					CrossValidatorModel cvm = cv.fit(training);

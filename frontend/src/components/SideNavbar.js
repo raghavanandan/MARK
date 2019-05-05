@@ -24,14 +24,14 @@ class SideNavbar extends Component{
     render() {
         return (
             <div className={'side-navbar'}>
-                <li className={"side-navlinks text-center " + (this.state.section === 'home' ? 'active' : '')} onClick={() => this.handleSectionChange('home')}>
-                    <div className={"side-navlinks-icon"}>
-                        <i className={"fas fa-home"} />
-                    </div>
-                    <div className={"side-navlinks-name"}>
-                        Home
-                    </div>
-                </li>
+                {/*<li className={"side-navlinks text-center " + (this.state.section === 'home' ? 'active' : '')} onClick={() => this.handleSectionChange('home')}>*/}
+                {/*    <div className={"side-navlinks-icon"}>*/}
+                {/*        <i className={"fas fa-home"} />*/}
+                {/*    </div>*/}
+                {/*    <div className={"side-navlinks-name"}>*/}
+                {/*        Home*/}
+                {/*    </div>*/}
+                {/*</li>*/}
                 <li className={"side-navlinks text-center " + (this.state.section === 'experiments' ? 'active' : '')} onClick={() => this.handleSectionChange('experiments')}>
                     <div className={"side-navlinks-icon"}>
                         <i className={"fas fa-flask"} />

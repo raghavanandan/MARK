@@ -63,6 +63,9 @@ public class Utils {
 	}
 
 	public static JSONObject convertFrameToJson2(List<Row> rows) {
+		
+		System.out.println("row to convert");
+		System.out.println(rows);
 
 		String[] fields = rows.get(0).schema().fieldNames();
 		//List<String> l = new ArrayList<>();

@@ -26,6 +26,10 @@ import org.apache.spark.ml.classification.NaiveBayes;
 import org.apache.spark.ml.classification.NaiveBayesModel;
 import org.apache.spark.ml.classification.RandomForestClassificationModel;
 import org.apache.spark.ml.classification.RandomForestClassifier;
+import org.apache.spark.ml.clustering.KMeans;
+import org.apache.spark.ml.clustering.KMeansModel;
+import org.apache.spark.ml.clustering.KMeansSummary;
+import org.apache.spark.ml.evaluation.ClusteringEvaluator;
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator;
 import org.apache.spark.ml.evaluation.RegressionEvaluator;
 import org.apache.spark.ml.feature.IndexToString;
@@ -33,6 +37,7 @@ import org.apache.spark.ml.feature.OneHotEncoder;
 import org.apache.spark.ml.feature.StringIndexer;
 import org.apache.spark.ml.feature.StringIndexerModel;
 import org.apache.spark.ml.feature.VectorAssembler;
+import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.param.ParamMap;
 import org.apache.spark.ml.regression.DecisionTreeRegressionModel;
 import org.apache.spark.ml.regression.DecisionTreeRegressor;
@@ -68,6 +73,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.mark.pojo.DT;
 import com.mark.pojo.FramePojo;
+import com.mark.pojo.KMPojo;
 import com.mark.pojo.LR;
 import com.mark.pojo.LinearR;
 import com.mark.pojo.MissingData;
@@ -117,7 +123,7 @@ public class ApiController {
 	private static final int limit = 50;
 
 	private static Map<String, Map<FramePojo,Dataset<Row>>> masterFrames = new HashMap<>();
-	
+
 	private static String master_frame_id;
 
 	@RequestMapping(value = "upload-file", method = RequestMethod.POST, produces =MediaType.APPLICATION_JSON_VALUE )
@@ -411,8 +417,12 @@ public class ApiController {
 		if (currentDf ==null) {
 			currentDf = masterDf;
 		}
-
+		System.out.println("currebt-frame");
+		currentDf.show();
 		Dataset<Row> groupFrame = currentDf.groupBy(currentDf.col(column)).count();
+		System.out.println("group-frame");
+		groupFrame.show();
+		List<Row> test = groupFrame.takeAsList(2);
 		JSONObject js = Utils.convertFrameToJson2(groupFrame.collectAsList());
 
 		Tuple2<String, String>[] dtypes = groupFrame.dtypes();
@@ -484,11 +494,11 @@ public class ApiController {
 
 			js.put("mode", _mode);
 			try {
-			double[] quantiles = currentDf.stat().approxQuantile(columns.get(0), new double[] {.5}, 0.2);
-			JSONObject obj = new JSONObject();
-			obj.put("summary", "median");
-			obj.put(columns.get(0), quantiles[0]);
-			((JSONArray)js.get("docs")).add(obj);
+				double[] quantiles = currentDf.stat().approxQuantile(columns.get(0), new double[] {.5}, 0.2);
+				JSONObject obj = new JSONObject();
+				obj.put("summary", "median");
+				obj.put(columns.get(0), quantiles[0]);
+				((JSONArray)js.get("docs")).add(obj);
 			}
 			catch(Exception e) {
 				JSONObject obj = new JSONObject();
@@ -496,7 +506,7 @@ public class ApiController {
 				obj.put(columns.get(0), null);
 				((JSONArray)js.get("docs")).add(obj);
 			}
-			
+
 		}
 
 
@@ -510,6 +520,35 @@ public class ApiController {
 		training = null;
 		testing = null;
 		pipelineModel = null;
+	}
+
+	private static Dataset<Row> prepareClusteringModel(ModelSelection modelSelection) {
+
+		if (currentDf == null) {
+			currentDf = masterDf;
+		}
+
+
+		Dataset<Row> f_df = currentDf;
+		if (!modelSelection.getFeatureCol().get(0).equals("All")) {
+			modelSelection.getFeatureCol().add((modelSelection.getOutputCol()));
+			String[] exp = new String[modelSelection.getFeatureCol().size()];
+			int i=0;
+			for (String s :modelSelection.getFeatureCol()) {
+				System.out.println(s);
+				exp[i] = "`"+s.trim()+"`";
+				i++;
+			}
+
+
+			f_df = currentDf.selectExpr(exp);
+		}
+
+		Dataset<Row>[] ds = f_df.randomSplit(new double[] {0.7, 0.3});
+		training = ds[0];
+		testing = ds[1];
+		return f_df;
+
 	}
 
 
@@ -542,8 +581,8 @@ public class ApiController {
 				exp[i] = "`"+s.trim()+"`";
 				i++;
 			}
-			
-			
+
+
 			f_df = currentDf.selectExpr(exp);
 		}
 
@@ -621,6 +660,9 @@ public class ApiController {
 		if (modelSelection.getModel().equals("regression")) {
 			f_df  = prepareRegressionModel(modelSelection);
 		}
+		if (modelSelection.getModel().equals("clustering")) {
+			f_df  = prepareClusteringModel(modelSelection);
+		}
 
 
 		List<Row> training_json = training.limit(limit).collectAsList();
@@ -648,8 +690,8 @@ public class ApiController {
 				exp[i] = "`"+s.trim()+"`";
 				i++;
 			}
-			
-			
+
+
 			f_df = currentDf.selectExpr(exp);
 		}
 		f_df = f_df.withColumn("label", f_df.col(modelSelection.getOutputCol()));
@@ -698,23 +740,23 @@ public class ApiController {
 		preppedDataDF.show();
 		return f_df;
 	}
-	
-	
+
+
 	@RequestMapping(value="update-missing")
 	public ResponseEntity<JSONObject> updateMissingValues(@RequestBody MissingData missingData){
-		
+
 		if (!missingData.getOldColumnName().equals(missingData.getNewColumnName())) {
 			System.out.println("Updating column $$$$$$$$");
 			masterDf = masterDf.withColumnRenamed(missingData.getOldColumnName(), missingData.getNewColumnName());
 			currentDf = currentDf.withColumnRenamed(missingData.getOldColumnName(), missingData.getNewColumnName());
-			
+
 		}
-		
+
 		if (missingData.getValue().trim().length()!=0) {
 			System.out.println("Updating value $$$$$$$");
 			String[] c = new String[1];
 			c[0] = missingData.getNewColumnName();
-			
+
 			String type = Utils.getColumnType(masterDf.dtypes(), missingData.getNewColumnName());
 			System.out.println("TYpe $$$$$$$ " + type);
 			switch (type) {
@@ -722,13 +764,13 @@ public class ApiController {
 				masterDf = masterDf.na().fill(Double.valueOf(missingData.getValue()) ,c);
 				currentDf = currentDf.na().fill(Double.valueOf(missingData.getValue()) ,c);
 				break;
-			
+
 			case "StringType":
 				masterDf = masterDf.na().fill(missingData.getValue() ,c);
 				currentDf = currentDf.na().fill(missingData.getValue() ,c);
 				break;
-				
-				
+
+
 			case "LongType":
 				masterDf = masterDf.na().fill(Long.valueOf(missingData.getValue()) ,c);
 				currentDf = currentDf.na().fill(Long.valueOf(missingData.getValue()) ,c);
@@ -737,23 +779,23 @@ public class ApiController {
 			default:
 				break;
 			}
-			
-			
+
+
 		}
-		
+
 		Map<FramePojo, Dataset<Row>> frameData = masterFrames.get(master_frame_id);
-		
+
 		FramePojo tempFPojo = null;
-		
+
 		for (FramePojo fPojo : frameData.keySet()) {
 			tempFPojo = fPojo;
-			
+
 		}
-		
+
 		frameData.put(tempFPojo, masterDf);
-		
-		
-		
+
+
+
 		JSONObject js = Utils.convertFrameToJson2(currentDf.collectAsList());
 		//		System.out.println(js);
 
@@ -764,7 +806,7 @@ public class ApiController {
 		js.put("header", header);
 
 		return new ResponseEntity<>(js, HttpStatus.OK);
-	
+
 	}
 
 	@RequestMapping(value="predict")
@@ -822,7 +864,7 @@ public class ApiController {
 					System.out.println("best model params "+cvm.bestModel().explainParams());
 					String bestParams = cvm.bestModel().explainParams();
 					best_params = Utils.parseBestParam(hyperParams, bestParams);
-					
+
 					predictions = cvm.transform(testing);
 
 
@@ -1436,6 +1478,42 @@ public class ApiController {
 				temp_res.put("hyper_tuning", hyper_tuning);
 				temp_res.put("best_params", "");
 				res.put(model.get("model"), temp_res);
+
+			}
+
+			if (model.get("model").equals("kmeans") && model_type.equals("clustering")){
+				Dataset<Row> predictions = null;
+
+				JSONObject best_params = new JSONObject();
+
+				JSONObject hyper_tuning = new JSONObject();
+				KMeansModel kmModel= null;
+
+				if (model.get("hyper_params")!=null) {
+					Map<String, String> hyperParams = (Map<String, String>) model.get("hyper_params");
+					KMeans km = new KMeans();
+					KMPojo kPojo = new KMPojo();
+					kPojo.setK(hyperParams.get("k"));
+					ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(km.k(), kPojo.getK());
+					ParamMap[] pMap = paramGrid.build();
+					ClusteringEvaluator ce = new ClusteringEvaluator();
+					CrossValidator cv = new CrossValidator().setNumFolds(Integer.valueOf(String.valueOf(model.get("kfold")))).setEstimator(km).setEstimatorParamMaps(pMap).setEvaluator(ce);
+					CrossValidatorModel cvm = cv.fit(training);
+					predictions = cvm.transform(testing);
+					double silhoute_score = ce.evaluate(predictions);
+					kmModel = (KMeansModel)cvm.bestModel();
+				}
+				else {
+					KMeans km = new KMeans().setK((int) model.get("k"));
+					kmModel = km.fit(training);
+					predictions = kmModel.transform(testing);
+				}
+				KMeansSummary summary = kmModel.summary();
+				long[] clusterSizes = summary.clusterSizes();
+				for(Vector v: kmModel.clusterCenters()){
+					System.out.println(v);
+
+				}
 
 			}
 

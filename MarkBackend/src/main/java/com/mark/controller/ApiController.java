@@ -26,6 +26,9 @@ import org.apache.spark.ml.classification.NaiveBayes;
 import org.apache.spark.ml.classification.NaiveBayesModel;
 import org.apache.spark.ml.classification.RandomForestClassificationModel;
 import org.apache.spark.ml.classification.RandomForestClassifier;
+import org.apache.spark.ml.clustering.BisectingKMeans;
+import org.apache.spark.ml.clustering.BisectingKMeansModel;
+import org.apache.spark.ml.clustering.BisectingKMeansSummary;
 import org.apache.spark.ml.clustering.KMeans;
 import org.apache.spark.ml.clustering.KMeansModel;
 import org.apache.spark.ml.clustering.KMeansSummary;
@@ -71,6 +74,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.mark.pojo.BisectingKMPojo;
 import com.mark.pojo.DT;
 import com.mark.pojo.FramePojo;
 import com.mark.pojo.KMPojo;
@@ -601,7 +605,7 @@ public class ApiController {
 		
 		List<String> assemblerInputs = new ArrayList<>(numerical);
 		for(String str: newCat) {
-			assemblerInputs.add(str + "classVec");
+			assemblerInputs.add(str);
 		}
 		VectorAssembler assembler = new VectorAssembler().setInputCols(assemblerInputs.toArray(new String[0])).setOutputCol("features");
 		stages.add(assembler);
@@ -685,19 +689,42 @@ public class ApiController {
 
 
 
+//		for(String str: categorical){
+//
+//			StringIndexer strIndexer = new StringIndexer().setInputCol(str).setOutputCol(str + "Index");
+//			OneHotEncoder encoder = new OneHotEncoder().setInputCol(strIndexer.getOutputCol()).setOutputCol(str + "classVec");
+//
+//			stages.add(strIndexer);
+//			stages.add(encoder);
+//		}
+//
+//		List<String> assemblerInputs = new ArrayList<>(numerical);
+//		for(String str: categorical) {
+//			assemblerInputs.add(str);
+//		}
+		
+		List<String> newCat = new ArrayList<>();
 		for(String str: categorical){
 
 			StringIndexer strIndexer = new StringIndexer().setInputCol(str).setOutputCol(str + "Index");
 			OneHotEncoder encoder = new OneHotEncoder().setInputCol(strIndexer.getOutputCol()).setOutputCol(str + "classVec");
 
 			stages.add(strIndexer);
+			if (f_df.select(str).distinct().count() < 2) {
+				newCat.add(str+"Index");
+				continue;
+			}
+			else {
+				newCat.add(str+"classVec");
+			}
 			stages.add(encoder);
 		}
-
+		
 		List<String> assemblerInputs = new ArrayList<>(numerical);
-		for(String str: categorical) {
-			assemblerInputs.add(str + "classVec");
+		for(String str: newCat) {
+			assemblerInputs.add(str);
 		}
+		
 
 		//		System.out.println(categorical);
 		//		System.out.println(numerical);
@@ -782,7 +809,7 @@ public class ApiController {
 		List<String> numerical = new ArrayList<>();
 		for(Tuple2<String, String> tup: f_df.dtypes())
 		{
-			if(tup._1 == "label" || tup._1 == "density") {
+			if(tup._1 == "label" || tup._1 == modelSelection.getOutputCol()) {
 				continue;
 			}
 			if(tup._2 == "StringType")
@@ -793,6 +820,8 @@ public class ApiController {
 				numerical.add(tup._1);
 			}
 		}
+		
+		
 
 		for(String str: categorical){
 			StringIndexer strIndexer = new StringIndexer().setInputCol(str).setOutputCol(str + "Index");
@@ -1607,6 +1636,55 @@ public class ApiController {
 				res.put(model.get("model"), temp_res);
 				
 			}
+			
+			if (model.get("model").equals("bisecting_kmeans") && model_type.equals("clustering")){
+				Dataset<Row> predictions = null;
+
+				JSONObject best_params = new JSONObject();
+
+				JSONObject hyper_tuning = new JSONObject();
+				BisectingKMeansModel bisectingKModel = null;
+				ClusteringEvaluator ce = new ClusteringEvaluator();
+				if (model.get("hyper_params")!=null) {
+					Map<String, String> hyperParams = (Map<String, String>) model.get("hyper_params");
+					BisectingKMeans bisectingKmeans = new BisectingKMeans();
+					BisectingKMPojo kPojo = new BisectingKMPojo();
+					kPojo.setK(hyperParams.get("k"));
+					kPojo.setMaxIter(hyperParams.get("maxIter"));
+					kPojo.setMinDivisibleClusterSize(hyperParams.get("minDivisibleClusterSize"));
+					ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(bisectingKmeans.k(), kPojo.getK()).addGrid(bisectingKmeans.maxIter(), kPojo.getMaxIter()).addGrid(bisectingKmeans.minDivisibleClusterSize(), kPojo.getMinDivisibleClusterSize());
+					ParamMap[] pMap = paramGrid.build();
+					
+					CrossValidator cv = new CrossValidator().setNumFolds(Integer.valueOf(String.valueOf(model.get("kfold")))).setEstimator(bisectingKmeans).setEstimatorParamMaps(pMap).setEvaluator(ce);
+					CrossValidatorModel cvm = cv.fit(training);
+					predictions = cvm.transform(testing);
+					bisectingKModel = (BisectingKMeansModel)cvm.bestModel();
+					best_params.put("k", bisectingKModel.getK());
+					best_params.put("maxIter", bisectingKModel.getMaxIter());
+					best_params.put("minDivisibleClusterSize", bisectingKModel.getMinDivisibleClusterSize());
+				}
+				else {
+					BisectingKMeans km = new BisectingKMeans().setK((int) model.get("k"));
+					bisectingKModel = km.fit(training);
+					predictions = 	bisectingKModel.transform(testing);
+				}
+				BisectingKMeansSummary summary = bisectingKModel.summary();
+				long[] clusterSizes = summary.clusterSizes();
+				System.out.println("Cluster Sizes "+clusterSizes);
+				double silhoute_score = ce.evaluate(predictions);
+				System.out.println("silhoute_score "+silhoute_score);
+				
+				Dataset<Row> p_orginal = predictions.select("prediction").limit(limit);
+				JSONObject p_original_json = Utils.convertFrameToJson2Single(p_orginal.collectAsList());
+				JSONObject temp_res = new JSONObject();
+				temp_res.put("prediction", p_original_json);
+				temp_res.put("best_params", best_params);
+				temp_res.put("silhoute_score", silhoute_score);
+				temp_res.put("clusterSizes", clusterSizes);
+				res.put(model.get("model"), temp_res);
+				
+			}
+
 
 		}
 

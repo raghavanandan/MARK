@@ -523,12 +523,18 @@ public class ApiController {
 	}
 
 	private static Dataset<Row> prepareClusteringModel(ModelSelection modelSelection) {
+		
+		ArrayList<PipelineStage> stages = new ArrayList<>();
+		List<String> categorical = new ArrayList<>();
+		List<String> numerical = new ArrayList<>();
+		
 
 		if (currentDf == null) {
 			currentDf = masterDf;
 		}
 
 
+		
 		Dataset<Row> f_df = currentDf;
 		if (!modelSelection.getFeatureCol().get(0).equals("All")) {
 			modelSelection.getFeatureCol().add((modelSelection.getOutputCol()));
@@ -544,11 +550,86 @@ public class ApiController {
 			f_df = currentDf.selectExpr(exp);
 		}
 
-		Dataset<Row>[] ds = f_df.randomSplit(new double[] {0.7, 0.3});
+		
+		
+//		if (!modelSelection.getFeatureCol().get(0).equals("All")) {
+//			inputCols =  new String[modelSelection.getFeatureCol().size()];
+//			int i=0;
+//			for (String s :modelSelection.getFeatureCol()) {
+//				System.out.println(s);
+//				inputCols[i] = s.trim();
+//				i++;
+//			}
+//
+//
+//		}
+//		else {
+//			inputCols = currentDf.columns();
+//		}
+		
+		for(Tuple2<String, String> tup: f_df.dtypes()){
+			if(tup._1.equals(modelSelection.getOutputCol())) {
+				continue;
+			}
+
+			if(tup._2 == "StringType") {
+				categorical.add(tup._1);
+			}
+			else {
+				numerical.add(tup._1);
+				f_df = f_df.withColumn("_" + tup._1 , f_df.col(tup._1).cast(DataTypes.DoubleType)).drop(tup._1).withColumnRenamed("_" + tup._1, tup._1);
+			}
+
+		}
+		
+		List<String> newCat = new ArrayList<>();
+		for(String str: categorical){
+
+			StringIndexer strIndexer = new StringIndexer().setInputCol(str).setOutputCol(str + "Index");
+			OneHotEncoder encoder = new OneHotEncoder().setInputCol(strIndexer.getOutputCol()).setOutputCol(str + "classVec");
+
+			stages.add(strIndexer);
+			if (f_df.select(str).distinct().count() < 2) {
+				newCat.add(str+"Index");
+				continue;
+			}
+			else {
+				newCat.add(str+"classVec");
+			}
+			stages.add(encoder);
+		}
+		
+		List<String> assemblerInputs = new ArrayList<>(numerical);
+		for(String str: newCat) {
+			assemblerInputs.add(str + "classVec");
+		}
+		VectorAssembler assembler = new VectorAssembler().setInputCols(assemblerInputs.toArray(new String[0])).setOutputCol("features");
+		stages.add(assembler);
+
+		Pipeline partialPipeline = new Pipeline().setStages(stages.toArray(new PipelineStage[0]));
+
+		pipelineModel = partialPipeline.fit(f_df);
+
+		Dataset<Row> preppedDataDF = pipelineModel.transform(f_df);
+
+		System.out.println(modelSelection.getTestSplit()/100.0);
+
+		System.out.println(modelSelection.getTrainSplit()/100.0);
+
+		Dataset<Row>[] ds = preppedDataDF.randomSplit(new double[] {modelSelection.getTrainSplit()/100.0, modelSelection.getTestSplit()/100.0});
+
 		training = ds[0];
 		testing = ds[1];
+
+		preppedDataDF.show();
 		return f_df;
 
+		
+		
+		
+		
+		
+		
 	}
 
 
@@ -1488,7 +1569,7 @@ public class ApiController {
 
 				JSONObject hyper_tuning = new JSONObject();
 				KMeansModel kmModel= null;
-
+				ClusteringEvaluator ce = new ClusteringEvaluator();
 				if (model.get("hyper_params")!=null) {
 					Map<String, String> hyperParams = (Map<String, String>) model.get("hyper_params");
 					KMeans km = new KMeans();
@@ -1496,12 +1577,12 @@ public class ApiController {
 					kPojo.setK(hyperParams.get("k"));
 					ParamGridBuilder paramGrid = new ParamGridBuilder().addGrid(km.k(), kPojo.getK());
 					ParamMap[] pMap = paramGrid.build();
-					ClusteringEvaluator ce = new ClusteringEvaluator();
+					
 					CrossValidator cv = new CrossValidator().setNumFolds(Integer.valueOf(String.valueOf(model.get("kfold")))).setEstimator(km).setEstimatorParamMaps(pMap).setEvaluator(ce);
 					CrossValidatorModel cvm = cv.fit(training);
 					predictions = cvm.transform(testing);
-					double silhoute_score = ce.evaluate(predictions);
 					kmModel = (KMeansModel)cvm.bestModel();
+					best_params.put("k", kmModel.getK());
 				}
 				else {
 					KMeans km = new KMeans().setK((int) model.get("k"));
@@ -1510,11 +1591,21 @@ public class ApiController {
 				}
 				KMeansSummary summary = kmModel.summary();
 				long[] clusterSizes = summary.clusterSizes();
+				System.out.println("Cluster Sizes "+clusterSizes);
+				double silhoute_score = ce.evaluate(predictions);
+				System.out.println("silhoute_score "+silhoute_score);
 				for(Vector v: kmModel.clusterCenters()){
 					System.out.println(v);
-
 				}
-
+				Dataset<Row> p_orginal = predictions.select("prediction").limit(limit);
+				JSONObject p_original_json = Utils.convertFrameToJson2Single(p_orginal.collectAsList());
+				JSONObject temp_res = new JSONObject();
+				temp_res.put("prediction", p_original_json);
+				temp_res.put("best_params", best_params);
+				temp_res.put("silhoute_score", silhoute_score);
+				temp_res.put("clusterSizes", clusterSizes);
+				res.put(model.get("model"), temp_res);
+				
 			}
 
 		}
